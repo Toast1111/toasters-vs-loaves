@@ -72,8 +72,100 @@ export function drawScene(ctx, state){
       ctx.closePath(); ctx.fill();
       // Armor plating
       ctx.fillStyle="#696969"; roundedRect(ctx,-e.r*0.6,-e.r*0.6,e.r*1.2,e.r*1.2,3);
+    } else if (e.type === 'whole_loaf') {
+      // Whole loaf - large rectangular bread
+      ctx.fillStyle="#deb887"; roundedRect(ctx,-e.r*1.1,-e.r*0.7,e.r*2.2,e.r*1.4,e.r*0.3);
+      ctx.fillStyle="#cd853f"; roundedRect(ctx,-e.r*1.0,-e.r*0.6,e.r*2.0,e.r*0.8,e.r*0.2);
+      // Split indicators (dotted lines showing where it will split)
+      ctx.strokeStyle="#8b7355"; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); 
+      ctx.moveTo(-e.r*0.3, -e.r*0.6); ctx.lineTo(-e.r*0.3, e.r*0.6);
+      ctx.moveTo(e.r*0.3, -e.r*0.6); ctx.lineTo(e.r*0.3, e.r*0.6);
+      ctx.stroke(); ctx.setLineDash([]);
+    } else if (e.type === 'half_loaf') {
+      // Half loaf - medium rectangular bread
+      ctx.fillStyle="#f4a460"; roundedRect(ctx,-e.r*0.9,-e.r*0.6,e.r*1.8,e.r*1.2,e.r*0.3);
+      ctx.fillStyle="#d2691e"; roundedRect(ctx,-e.r*0.8,-e.r*0.5,e.r*1.6,e.r*0.7,e.r*0.2);
+      // Split indicator
+      ctx.strokeStyle="#8b4513"; ctx.lineWidth=1; ctx.setLineDash([2,2]);
+      ctx.beginPath(); ctx.moveTo(0, -e.r*0.5); ctx.lineTo(0, e.r*0.5); ctx.stroke(); ctx.setLineDash([]);
+    } else if (e.type === 'artisan_loaf') {
+      // Artisan loaf - premium bread with decorative scoring
+      ctx.fillStyle="#daa520"; roundedRect(ctx,-e.r*1.0,-e.r*0.75,e.r*2.0,e.r*1.5,e.r*0.4);
+      ctx.fillStyle="#b8860b"; roundedRect(ctx,-e.r*0.9,-e.r*0.65,e.r*1.8,e.r*0.9,e.r*0.3);
+      // Artisan scoring pattern
+      ctx.strokeStyle="#8b7d6b"; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(-e.r*0.6, -e.r*0.3); ctx.lineTo(e.r*0.6, -e.r*0.1);
+      ctx.moveTo(-e.r*0.6, e.r*0.1); ctx.lineTo(e.r*0.6, e.r*0.3);
+      ctx.stroke();
+    } else if (e.type === 'dinner_roll') {
+      // Dinner roll - small round bread
+      ctx.fillStyle="#f5deb3"; 
+      ctx.beginPath(); ctx.arc(0,0,e.r,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle="#ddd8be"; 
+      ctx.beginPath(); ctx.arc(0,0,e.r*0.7,0,Math.PI*2); ctx.fill();
+      // Texture lines
+      ctx.strokeStyle="#d2b48c"; ctx.lineWidth=1;
+      for(let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI / 3);
+        ctx.beginPath(); 
+        ctx.moveTo(Math.cos(angle) * e.r*0.3, Math.sin(angle) * e.r*0.3);
+        ctx.lineTo(Math.cos(angle) * e.r*0.6, Math.sin(angle) * e.r*0.6);
+        ctx.stroke();
+      }
+    } else if (e.type === 'crumb') {
+      // Crumb - tiny bread pieces
+      ctx.fillStyle="#ddc3a5"; 
+      const sides = 5 + Math.floor(Math.random() * 3); // Irregular shape
+      ctx.beginPath();
+      for(let i = 0; i < sides; i++) {
+        const angle = (i * Math.PI * 2 / sides);
+        const radius = e.r * (0.7 + Math.random() * 0.3);
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.fill();
+    } else if (e.type === 'baguette') {
+      // Baguette - elongated French bread
+      ctx.fillStyle="#e8c5a0"; roundedRect(ctx,-e.r*1.4,-e.r*0.5,e.r*2.8,e.r*1.0,e.r*0.2);
+      ctx.fillStyle="#d4b087"; roundedRect(ctx,-e.r*1.3,-e.r*0.4,e.r*2.6,e.r*0.6,e.r*0.15);
+      // Diagonal score marks
+      ctx.strokeStyle="#b8956a"; ctx.lineWidth=1;
+      for(let i = -1; i <= 1; i++) {
+        ctx.beginPath(); 
+        ctx.moveTo(i*e.r*0.6, -e.r*0.3); ctx.lineTo(i*e.r*0.6, e.r*0.3);
+        ctx.stroke();
+      }
+    } else if (e.type === 'rye') {
+      // Rye bread - darker, denser looking
+      ctx.fillStyle="#8b4513"; roundedRect(ctx,-e.r*0.9,-e.r*0.7,e.r*1.8,e.r*1.4,e.r*0.4);
+      ctx.fillStyle="#a0522d"; roundedRect(ctx,-e.r*0.8,-e.r*0.6,e.r*1.6,e.r*0.8,e.r*0.3);
+      // Seeds texture
+      ctx.fillStyle="#654321";
+      for(let i = 0; i < 8; i++) {
+        const x = (Math.random() - 0.5) * e.r * 1.4;
+        const y = (Math.random() - 0.5) * e.r * 1.0;
+        ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI*2); ctx.fill();
+      }
+    } else if (e.type === 'croissant') {
+      // Croissant - crescent shaped
+      ctx.fillStyle="#f4e4bc"; 
+      ctx.beginPath();
+      ctx.arc(-e.r*0.3, 0, e.r*0.8, 0, Math.PI*2); 
+      ctx.arc(e.r*0.3, 0, e.r*0.6, 0, Math.PI*2); 
+      ctx.fill();
+      ctx.fillStyle="#e6d3a3";
+      ctx.beginPath(); ctx.arc(0, 0, e.r*0.5, 0, Math.PI*2); ctx.fill();
+      // Flaky layers
+      ctx.strokeStyle="#d4af37"; ctx.lineWidth=1;
+      for(let i = 0; i < 3; i++) {
+        ctx.beginPath(); ctx.arc(0, 0, e.r*0.3 + i*3, 0, Math.PI*2); ctx.stroke();
+      }
     } else {
-      // Regular bread
+      // Regular slice bread (default)
       ctx.fillStyle="#c58a55"; roundedRect(ctx,-e.r*0.875,-e.r*0.625,e.r*1.75,e.r*1.25,e.r*0.5);
       ctx.fillStyle="#8c5a2f"; roundedRect(ctx,-e.r*0.875,-e.r*0.75,e.r*1.75,e.r*0.5,e.r*0.375);
     }
