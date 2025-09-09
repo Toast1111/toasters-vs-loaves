@@ -61,6 +61,15 @@ export function stepBreads(dt, state){
     const vx=dx/d*currentSpeed, vy=dy/d*currentSpeed; e.x+=vx*effectiveDt; e.y+=vy*effectiveDt;
   }
 }
+// Define splitting patterns for different bread types
+const SPLIT_PATTERNS = {
+  'whole_loaf': { into: 'half_loaf', count: 3, sizeMultiplier: 0.6, statMultiplier: 0.4 },
+  'artisan_loaf': { into: 'slice', count: 4, sizeMultiplier: 0.5, statMultiplier: 0.35 },
+  'half_loaf': { into: 'slice', count: 2, sizeMultiplier: 0.7, statMultiplier: 0.5 },
+  'dinner_roll': { into: 'crumb', count: 3, sizeMultiplier: 0.4, statMultiplier: 0.3 },
+  'sourdough_boss': { into: 'sourdough_split', count: 3, sizeMultiplier: 0.4, statMultiplier: 0.3 }
+};
+
 export function damageBread(e, dmg, state){
   // Apply armor reduction
   const actualDamage = dmg * (1 - (e.armor || 0));
@@ -82,8 +91,43 @@ export function damageBread(e, dmg, state){
     // Roll for powerup drop
     rollPowerupDrop(e, state);
     
-    // Handle splitting boss
-    if (e.special === 'split' && e.r > 15) {
+    // Handle splitting mechanics
+    const splitPattern = SPLIT_PATTERNS[e.type];
+    if (splitPattern) {
+      for (let i = 0; i < splitPattern.count; i++) {
+        const angle = (i * Math.PI * 2 / splitPattern.count) + Math.random() * 0.5;
+        const distance = e.r + 15;
+        const splitBread = {
+          id: ++_id, 
+          type: splitPattern.into, 
+          hp: Math.ceil(e.maxHp * splitPattern.statMultiplier), 
+          maxHp: Math.ceil(e.maxHp * splitPattern.statMultiplier),
+          speed: e.speed * (1 + Math.random() * 0.3), // Slightly randomize speed
+          bounty: Math.ceil(e.bounty * splitPattern.statMultiplier), 
+          wpt: e.wpt,
+          x: e.x + Math.cos(angle) * distance, 
+          y: e.y + Math.sin(angle) * distance,
+          r: Math.ceil(e.r * splitPattern.sizeMultiplier), 
+          alive: true, 
+          special: null, 
+          armor: 0,
+          lastSpeedBurst: 0, 
+          regenerateTimer: 0
+        };
+        breads.push(splitBread);
+      }
+      
+      // Visual feedback for splitting
+      addScreenShake(4, 0.3);
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          UI.log(`🍞 ${e.type} split into ${splitPattern.count} ${splitPattern.into}s!`);
+        }
+      }).catch(err => console.warn('Failed to log split:', err));
+    }
+    
+    // Legacy boss splitting (keeping for compatibility with existing sourdough_boss)
+    else if (e.special === 'split' && e.r > 15) {
       // Split into 3 smaller versions
       for (let i = 0; i < 3; i++) {
         const angle = (i * Math.PI * 2 / 3) + Math.random() * 0.5;
