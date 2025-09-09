@@ -120,14 +120,19 @@ export const UI={
         upgradeHTML += '<div class="upgrade-info"><div class="maxed">Path Maxed</div></div>';
       } else {
         // Show why upgrade is blocked
+        const nextTier = currentTier + 1;
         const tier5Count = t.upgradeTiers.filter(tier => tier === 5).length;
         const tier3PlusCount = t.upgradeTiers.filter(tier => tier >= 3).length;
         
         let blockReason = '';
         if(nextTier === 5 && tier5Count > 0) {
           blockReason = 'Only one Tier 5 allowed';
+        } else if(nextTier === 4 && tier5Count > 0) {
+          blockReason = 'Another path already at Tier 5';
         } else if(nextTier === 3 && tier3PlusCount >= 2 && currentTier < 3) {
           blockReason = 'Max 2 paths at Tier 3+';
+        } else if(nextUpgrade) {
+          blockReason = `Need ${nextUpgrade.cost} coins`;
         }
         
         upgradeHTML += `<div class="upgrade-info"><div class="blocked">${blockReason}</div></div>`;

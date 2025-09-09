@@ -107,6 +107,7 @@ export class Game{
     
     // Check if upgrade is allowed using our constraint system
     if (!canUpgrade(tower, pathIndex, currentTier)) {
+      UI.float(this, tower.x, tower.y, 'Upgrade blocked!', true);
       return false;
     }
     
@@ -119,6 +120,7 @@ export class Game{
     
     // Check if player has enough coins
     if (this.state.coins < upgrade.cost) {
+      UI.float(this, tower.x, tower.y, 'Not enough coins!', true);
       return false;
     }
     

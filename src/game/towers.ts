@@ -441,16 +441,15 @@ export function canUpgrade(tower, pathIndex, currentTier) {
   
   // If trying to upgrade to tier 4
   if (nextTier === 4) {
-    // Only allowed if this path is not blocked by the tier 5 restriction
-    const wouldBeTier5Path = tower.upgradeTiers[pathIndex] === 4;
-    return !wouldBeTier5Path || tier5Paths === 0;
+    // Only allowed if this would be the potential tier 5 path (no other path at tier 5)
+    return tier5Paths === 0;
   }
   
   // If trying to upgrade to tier 3
   if (nextTier === 3) {
-    // Only allowed if less than 2 paths are at tier 3+
-    const currentPathAtTier3Plus = tower.upgradeTiers[pathIndex] >= 3;
-    return currentPathAtTier3Plus || tier3Plus < constraints.maxTier3Paths;
+    // Only allowed if less than 2 paths are at tier 3+, OR this path is already at tier 3+
+    const currentPathAlreadyTier3Plus = tower.upgradeTiers[pathIndex] >= 3;
+    return currentPathAlreadyTier3Plus || tier3Plus < constraints.maxTier3Paths;
   }
   
   // Tiers 1-2 are always allowed
