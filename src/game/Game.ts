@@ -11,21 +11,13 @@ import { stepEffects, createHeatZone, getAdaptiveTargeting, addScreenShake } fro
 import { stepPowerups, tryCollectPowerup } from "./powerups";
 import { stepAbilities, tryActivateAbility } from "./abilities";
 import { stepStats, loadStats, recordTowerBuilt, recordWaveCompleted } from "./achievements";
-
-// Lazy UI accessor to avoid mixed static/dynamic import issues
-const useUI = (fn:any)=>import('./ui').then(({ UI })=>{
-  if (UI && typeof fn === 'function') {
-    return fn(UI);
-  }
-}).catch(err => {
-  console.warn('Failed to access UI:', err);
-});
+import { UI } from "./ui";
 
 export class Game{
   canvas; ctx; state; mouse={x:-999,y:-999}; last=performance.now();
   constructor(canvas, ctx){ this.canvas=canvas; this.ctx=ctx; this.state=createInitialState(canvas.width, canvas.height); }
   init(){
-    useUI(UI=>UI && UI.bind && UI.bind(this));
+    UI.bind(this);
     loadStats(); // Load saved achievements and stats
     this.canvas.addEventListener('mousemove',e=>{ this.mouse.x=e.offsetX; this.mouse.y=e.offsetY; });
     this.canvas.addEventListener('mouseleave',()=>{ this.mouse.x=this.mouse.y=-9999; });
@@ -38,7 +30,7 @@ export class Game{
       }
       
   const hit=this.state.toasters.findLast(t=>Math.hypot(x-t.x,y-t.y)<=18);
-  if(hit){ this.state.selected=hit.id; useUI(UI=>UI && UI.updateInspect && UI.updateInspect(this)); return; }
+  if(hit){ this.state.selected=hit.id; UI.updateInspect(this); return; }
       if(this.state.placing){ this.tryPlaceTower(x,y, e.shiftKey); }
     });
     
@@ -48,24 +40,22 @@ export class Game{
       tryActivateAbility(e.key, this);
     });
     
-  useUI(UI=>{ 
-    UI && UI.refreshCatalog && UI.refreshCatalog(this); 
-    UI && UI.refreshTech && UI.refreshTech(this); 
-    UI && UI.log && UI.log('Welcome to Toasters vs Loaves! Place toasters and press Start Wave. Earn AP to buy Tech.'); 
-    UI && UI.log && UI.log('💡 Special abilities: Q-Lightning, W-Heat Wave, E-Repair, R-Emergency Coins'); 
-  });
+  UI.refreshCatalog(this); 
+  UI.refreshTech(this); 
+  UI.log('Welcome to Toasters vs Loaves! Place toasters and press Start Wave. Earn AP to buy Tech.'); 
+  UI.log('💡 Special abilities: Q-Lightning, W-Heat Wave, E-Repair, R-Emergency Coins'); 
   }
   stepTime(now){ const dt=Math.min(0.033,(now-this.last)/1000); this.last=now; return dt; }
   tryPlaceTower(x,y,multi=false){
-  if(!isBuildable(x,y)){ useUI(UI=>UI && UI.float && UI.float(this, x,y,'Not on loaf path!',true)); return; }
+  if(!isBuildable(x,y)){ UI.float(this, x,y,'Not on loaf path!',true); return; }
     const type=this.state.placing; if(!type) return;
-  if(this.state.coins<type.cost){ useUI(UI=>UI && UI.float && UI.float(this,x,y,'Not enough coins',true)); return; }
-  for(const t of this.state.toasters){ if(Math.hypot(x-t.x,y-t.y)<36){ useUI(UI=>UI && UI.float && UI.float(this,x,y,'Too close to another toaster',true)); return; } }
+  if(this.state.coins<type.cost){ UI.float(this,x,y,'Not enough coins',true); return; }
+  for(const t of this.state.toasters){ if(Math.hypot(x-t.x,y-t.y)<36){ UI.float(this,x,y,'Too close to another toaster',true); return; } }
     const inst=this.makeToaster(type,x,y);
     this.state.toasters.push(inst);
-  this.state.coins-=type.cost; useUI(UI=>UI && UI.sync && UI.sync(this));
-  useUI(UI=>UI && UI.log && UI.log(`Placed ${type.name} for ${type.cost}c.`));
-  useUI(UI=>UI && UI.refreshCatalog && UI.refreshCatalog(this));
+  this.state.coins-=type.cost; UI.sync(this);
+  UI.log(`Placed ${type.name} for ${type.cost}c.`);
+  UI.refreshCatalog(this);
     addScreenShake(2, 0.2); // Satisfying placement feedback
     recordTowerBuilt(type.key); // Record for achievements
     if(!multi) this.state.placing=null;
@@ -86,15 +76,15 @@ export class Game{
   sellSelected(){
     const t=this.getSelected(); if(!t) return; t.sold=true;
     const value= Math.floor(0.8 * this.getTowerCost(t));
-  this.state.coins+=value; useUI(UI=>UI && UI.sync && UI.sync(this));
+  this.state.coins+=value; UI.sync(this);
     this.state.toasters=this.state.toasters.filter(x=>x.id!==t.id);
-  this.state.selected=null; useUI(UI=>{ UI && UI.updateInspect && UI.updateInspect(this); UI && UI.refreshCatalog && UI.refreshCatalog(this); });
-  useUI(UI=>UI && UI.float && UI.float(this,t.x,t.y,`+${value}c (sold)`));
+  this.state.selected=null; UI.updateInspect(this); UI.refreshCatalog(this);
+  UI.float(this,t.x,t.y,`+${value}c (sold)`);
   }
   getTowerCost(t){ const base=getTowerBase(t.type).cost; let spent=0; const ups=getTowerBase(t.type).upgrades; for(let i=0;i<t.level;i++) spent+=ups[i].cost; return base+spent; }
   getSelected(){ return this.state.toasters.find(t=>t.id===this.state.selected); }
   startWave(){
-    if(this.state.waveInProgress) return; this.state.wave++; useUI(UI=>{ UI && UI.sync && UI.sync(this); UI && UI.log && UI.log(`Wave ${this.state.wave} begins!`); });
+    if(this.state.waveInProgress) return; this.state.wave++; UI.sync(this); UI.log(`Wave ${this.state.wave} begins!`);
     this.state.waveQueue=buildWave(this.state.wave);
     this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
   }
@@ -105,8 +95,8 @@ export class Game{
       if(this.state.spawnTimer<=0 && this.state.waveQueue.length){ spawnBread(this.state.waveQueue.shift()); this.state.spawnTimer=0.45; }
       if(!this.state.waveQueue.length && breads.every(b=>!b.alive)){
   this.state.waveInProgress=false; this.state.betweenWaves=true;
-  this.state.ap+=1; this.state.coins+=50+this.state.wave*10; useUI(UI=>UI && UI.sync && UI.sync(this));
-  useUI(UI=>UI && UI.log && UI.log(`Wave ${this.state.wave} cleared! +AP, +coins`));
+  this.state.ap+=1; this.state.coins+=50+this.state.wave*10; UI.sync(this);
+  UI.log(`Wave ${this.state.wave} cleared! +AP, +coins`);
         recordWaveCompleted(); // Record for achievements
       }
     }
