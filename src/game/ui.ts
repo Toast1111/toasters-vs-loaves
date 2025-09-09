@@ -1,5 +1,8 @@
 // @ts-nocheck
 import { TOWER_TYPES } from "./towers";
+import { activePowerups, POWERUP_TYPES } from "./powerups";
+import { getAbilityStatus } from "./abilities";
+import { achievements, getAchievementProgress } from "./achievements";
 
 export const UI={
   bind(game){
@@ -75,70 +78,56 @@ export const UI={
   },
   float(game,x,y,str,isBad=false){ game.state.texts.push({x,y,str,isBad,t:0}); },
   updatePowerupDisplay(){
-    import('./powerups').then(({ activePowerups, POWERUP_TYPES }) => {
-      const display = document.getElementById('powerupDisplay');
-      const content = document.getElementById('activePowerups');
-      
-      if (activePowerups.length === 0) {
-        display.style.display = 'none';
-      } else {
-        display.style.display = 'block';
-        const powerupTexts = activePowerups.map(p => {
-          const data = POWERUP_TYPES[p.type];
-          return `<span style="color: ${data.color}">${data.name} (${Math.ceil(p.duration)}s)</span>`;
-        });
-        content.innerHTML = powerupTexts.join(', ');
-      }
-    });
+    const display = document.getElementById('powerupDisplay');
+    const content = document.getElementById('activePowerups');
+    if (activePowerups.length === 0) {
+      display.style.display = 'none';
+    } else {
+      display.style.display = 'block';
+      const powerupTexts = activePowerups.map(p => {
+        const data = POWERUP_TYPES[p.type];
+        return `<span style="color: ${data.color}">${data.name} (${Math.ceil(p.duration)}s)</span>`;
+      });
+      content.innerHTML = powerupTexts.join(', ');
+    }
   },
   refreshAbilities(){
-    import('./abilities').then(({ getAbilityStatus }) => {
-      const display = document.getElementById('abilitiesDisplay');
-      const abilities = getAbilityStatus();
-      
-      let html = '<div class="hint">Hotkeys: Q, W, E, R. Abilities cost coins except Emergency Coins.</div>';
-      
-      for (const ability of abilities) {
-        const readyClass = ability.ready ? 'ready' : 'cooldown';
-        const cooldownPercent = ability.ready ? 0 : (ability.cooldown / ability.maxCooldown) * 100;
-        
-        html += `
-          <div class="ability ${readyClass}">
-            <div class="ability-info">
-              <div><strong>${ability.name}</strong> ${ability.cost > 0 ? `(${ability.cost}c)` : '(Free)'}</div>
-              <div class="small">${ability.description}</div>
-              ${!ability.ready ? `<div class="cooldown-bar"><div class="cooldown-progress" style="width: ${cooldownPercent}%"></div></div>` : ''}
-            </div>
-            <div class="ability-key">${ability.hotkey}</div>
+    const display = document.getElementById('abilitiesDisplay');
+    const abilities = getAbilityStatus();
+    let html = '<div class="hint">Hotkeys: Q, W, E, R. Abilities cost coins except Emergency Coins.</div>';
+    for (const ability of abilities) {
+      const readyClass = ability.ready ? 'ready' : 'cooldown';
+      const cooldownPercent = ability.ready ? 0 : (ability.cooldown / ability.maxCooldown) * 100;
+      html += `
+        <div class="ability ${readyClass}">
+          <div class="ability-info">
+            <div><strong>${ability.name}</strong> ${ability.cost > 0 ? `(${ability.cost}c)` : '(Free)'}</div>
+            <div class="small">${ability.description}</div>
+            ${!ability.ready ? `<div class="cooldown-bar"><div class="cooldown-progress" style="width: ${cooldownPercent}%"></div></div>` : ''}
           </div>
-        `;
-      }
-      
-      display.innerHTML = html;
-    });
+          <div class="ability-key">${ability.hotkey}</div>
+        </div>
+      `;
+    }
+    display.innerHTML = html;
   },
   refreshAchievements(){
-    import('./achievements').then(({ achievements, getAchievementProgress }) => {
-      const display = document.getElementById('achievementsDisplay');
-      const progress = getAchievementProgress();
-      
-      let html = `<div class="hint">Achievements: ${progress.unlocked}/${progress.total} (${progress.percentage}%)</div>`;
-      
-      for (const achievement of achievements) {
-        const statusClass = achievement.unlocked ? 'unlocked' : 'locked';
-        html += `
-          <div class="achievement ${statusClass}">
-            <div class="achievement-icon">${achievement.icon}</div>
-            <div class="achievement-text">
-              <div class="achievement-name">${achievement.name}</div>
-              <div class="achievement-desc">${achievement.description}</div>
-            </div>
+    const display = document.getElementById('achievementsDisplay');
+    const progress = getAchievementProgress();
+    let html = `<div class="hint">Achievements: ${progress.unlocked}/${progress.total} (${progress.percentage}%)</div>`;
+    for (const achievement of achievements) {
+      const statusClass = achievement.unlocked ? 'unlocked' : 'locked';
+      html += `
+        <div class="achievement ${statusClass}">
+          <div class="achievement-icon">${achievement.icon}</div>
+          <div class="achievement-text">
+            <div class="achievement-name">${achievement.name}</div>
+            <div class="achievement-desc">${achievement.description}</div>
           </div>
-        `;
-      }
-      
-      display.innerHTML = html;
-    });
+        </div>
+      `;
+    }
+    display.innerHTML = html;
   }
 };
 

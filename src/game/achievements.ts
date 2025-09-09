@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { addScreenShake } from './effects';
 export const achievements = [
   {
     id: 'first_kill',
@@ -103,13 +104,12 @@ export function checkAchievements() {
 
 export function showAchievementUnlock(achievement) {
   import('./ui').then(({ UI }) => {
-    UI.log(`🎉 Achievement Unlocked: ${achievement.icon} ${achievement.name}!`);
-    UI.refreshAchievements(); // Refresh the achievements display
-  });
-  
-  import('./effects').then(({ addScreenShake }) => {
+    if (UI && UI.log && UI.refreshAchievements) {
+      UI.log(`🎉 Achievement Unlocked: ${achievement.icon} ${achievement.name}!`);
+      UI.refreshAchievements(); // Refresh the achievements display
+    }
+  }).catch(err => console.warn('Failed to show achievement unlock:', err));
     addScreenShake(5, 0.3);
-  });
 }
 
 export function recordEnemyKilled(enemy) {

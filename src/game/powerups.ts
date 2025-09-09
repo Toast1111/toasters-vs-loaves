@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { recordPowerupCollected } from './achievements';
+import { addScreenShake } from './effects';
 export const powerups = [];
 export const activePowerups = [];
 
@@ -123,7 +125,11 @@ export function stepPowerups(dt, state) {
   
   // Update UI
   import('./ui').then(({ UI }) => {
-    UI.updatePowerupDisplay();
+    if (UI && UI.updatePowerupDisplay) {
+      UI.updatePowerupDisplay();
+    }
+  }).catch(err => {
+    console.warn('Failed to update powerup display:', err);
   });
 }
 
@@ -134,10 +140,8 @@ export function tryCollectPowerup(x, y, state) {
       activatePowerup(powerup.type, state);
       powerup.dead = true;
       
-      // Record powerup collection for achievements
-      import('./achievements').then(({ recordPowerupCollected }) => {
-        recordPowerupCollected();
-      });
+  // Record powerup collection for achievements
+  recordPowerupCollected();
       
       return true;
     }
@@ -165,12 +169,14 @@ export function activatePowerup(type, state) {
   
   // Show notification
   import('./ui').then(({ UI }) => {
-    UI.log(`🚀 ${powerupData.name} activated!`);
+    if (UI && UI.log) {
+      UI.log(`🚀 ${powerupData.name} activated!`);
+    }
+  }).catch(err => {
+    console.warn('Failed to log powerup activation:', err);
   });
   
-  import('./effects').then(({ addScreenShake }) => {
-    addScreenShake(3, 0.2);
-  });
+  addScreenShake(3, 0.2);
 }
 
 // Chance for enemies to drop powerups when killed

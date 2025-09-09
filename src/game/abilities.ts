@@ -1,4 +1,8 @@
 // @ts-nocheck
+import { breads, damageBread } from './breads';
+import { createHeatZone, addScreenShake } from './effects';
+import { recordAbilityUsed } from './achievements';
+
 export const specialAbilities = {
   LIGHTNING_STRIKE: {
     name: 'Lightning Strike',
@@ -8,21 +12,19 @@ export const specialAbilities = {
     description: 'Strikes all enemies with lightning, dealing massive damage',
     currentCooldown: 0,
     effect: (game) => {
-      import('./breads').then(({ breads, damageBread }) => {
-        import('./effects').then(({ addScreenShake }) => {
-          let hitCount = 0;
-          for (const bread of breads) {
-            if (bread.alive) {
-              damageBread(bread, 150, game.state);
-              hitCount++;
-            }
-          }
-          addScreenShake(10, 0.8);
-          import('./ui').then(({ UI }) => {
-            UI.log(`⚡ Lightning Strike hit ${hitCount} enemies!`);
-          });
-        });
-      });
+      let hitCount = 0;
+      for (const bread of breads) {
+        if (bread.alive) {
+          damageBread(bread, 150, game.state);
+          hitCount++;
+        }
+      }
+      addScreenShake(10, 0.8);
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          UI.log(`⚡ Lightning Strike hit ${hitCount} enemies!`);
+        }
+      }).catch(err => console.warn('Failed to log lightning strike:', err));
     }
   },
   
@@ -34,21 +36,19 @@ export const specialAbilities = {
     description: 'Creates heat zones at all enemy positions',
     currentCooldown: 0,
     effect: (game) => {
-      import('./breads').then(({ breads }) => {
-        import('./effects').then(({ createHeatZone, addScreenShake }) => {
-          let zoneCount = 0;
-          for (const bread of breads) {
-            if (bread.alive) {
-              createHeatZone(bread.x, bread.y, 60, 12, 4);
-              zoneCount++;
-            }
-          }
-          addScreenShake(6, 0.4);
-          import('./ui').then(({ UI }) => {
-            UI.log(`🔥 Heat Wave created ${zoneCount} burning zones!`);
-          });
-        });
-      });
+      let zoneCount = 0;
+      for (const bread of breads) {
+        if (bread.alive) {
+          createHeatZone(bread.x, bread.y, 60, 12, 4);
+          zoneCount++;
+        }
+      }
+      addScreenShake(6, 0.4);
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          UI.log(`🔥 Heat Wave created ${zoneCount} burning zones!`);
+        }
+      }).catch(err => console.warn('Failed to log heat wave:', err));
     }
   },
   
@@ -67,13 +67,13 @@ export const specialAbilities = {
       }, 5000);
       
       import('./ui').then(({ UI }) => {
-        UI.log(`💚 Repaired 50 lives + 5s invulnerability!`);
-        UI.sync(game);
-      });
+        if (UI && UI.log && UI.sync) {
+          UI.log(`💚 Repaired 50 lives + 5s invulnerability!`);
+          UI.sync(game);
+        }
+      }).catch(err => console.warn('Failed to log repair:', err));
       
-      import('./effects').then(({ addScreenShake }) => {
-        addScreenShake(4, 0.3);
-      });
+      addScreenShake(4, 0.3);
     }
   },
   
@@ -89,13 +89,13 @@ export const specialAbilities = {
       game.state.coins += bonus;
       
       import('./ui').then(({ UI }) => {
-        UI.log(`💰 Emergency funds: +${bonus} coins!`);
-        UI.sync(game);
-      });
+        if (UI && UI.log && UI.sync) {
+          UI.log(`💰 Emergency funds: +${bonus} coins!`);
+          UI.sync(game);
+        }
+      }).catch(err => console.warn('Failed to log emergency coins:', err));
       
-      import('./effects').then(({ addScreenShake }) => {
-        addScreenShake(3, 0.2);
-      });
+      addScreenShake(3, 0.2);
     }
   }
 };
@@ -115,8 +115,10 @@ export function stepAbilities(dt) {
   
   if (needsUpdate) {
     import('./ui').then(({ UI }) => {
-      UI.refreshAbilities();
-    });
+      if (UI && UI.refreshAbilities) {
+        UI.refreshAbilities();
+      }
+    }).catch(err => console.warn('Failed to refresh abilities:', err));
   }
 }
 
@@ -125,15 +127,19 @@ export function tryActivateAbility(key, game) {
     if (ability.hotkey.toLowerCase() === key.toLowerCase()) {
       if (ability.currentCooldown > 0) {
         import('./ui').then(({ UI }) => {
-          UI.log(`${ability.name} on cooldown (${Math.ceil(ability.currentCooldown)}s)`);
-        });
+          if (UI && UI.log) {
+            UI.log(`${ability.name} on cooldown (${Math.ceil(ability.currentCooldown)}s)`);
+          }
+        }).catch(err => console.warn('Failed to log cooldown:', err));
         return false;
       }
       
       if (game.state.coins < ability.cost) {
         import('./ui').then(({ UI }) => {
-          UI.log(`Not enough coins for ${ability.name} (need ${ability.cost})`);
-        });
+          if (UI && UI.log) {
+            UI.log(`Not enough coins for ${ability.name} (need ${ability.cost})`);
+          }
+        }).catch(err => console.warn('Failed to log insufficient coins:', err));
         return false;
       }
       
@@ -142,13 +148,13 @@ export function tryActivateAbility(key, game) {
       ability.effect(game);
       
       // Record ability usage for achievements
-      import('./achievements').then(({ recordAbilityUsed }) => {
-        recordAbilityUsed(key);
-      });
+      recordAbilityUsed(key);
       
       import('./ui').then(({ UI }) => {
-        UI.sync(game);
-      });
+        if (UI && UI.sync) {
+          UI.sync(game);
+        }
+      }).catch(err => console.warn('Failed to sync UI:', err));
       
       return true;
     }

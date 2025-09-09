@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { waypoints } from "./map";
 import { addScreenShake } from "./effects";
-import { UI } from "./ui";
 import { rollPowerupDrop } from "./powerups";
 import { spawnExplosion, spawnDamageNumber } from "./particles";
 import { recordEnemyKilled, recordCoinsEarned } from "./achievements";
@@ -108,8 +107,12 @@ export function damageBread(e, dmg, state){
     if (e.r > 15) {
       // Add screen shake and bonus AP for boss kills
       state.ap += 2;
-      addScreenShake(8, 0.5);
+  addScreenShake(8, 0.5);
+  import('./ui').then(({ UI }) => {
+    if (UI && UI.log) {
       UI.log(`💀 Boss defeated! +2 AP bonus!`);
+    }
+  }).catch(err => console.warn('Failed to log boss defeat:', err));
     }
   }
 }
