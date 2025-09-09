@@ -22,6 +22,44 @@ export function stepBreads(dt, state){
   for(const e of breads){
     if(!e.alive) continue;
     
+    // Handle status effects from new upgrade system
+    let speedMultiplier = 1;
+    
+    // Burn damage over time
+    if(e.burnDuration > 0) {
+      e.burnDuration -= dt;
+      e.hp -= (e.burnDamage || 0) * dt;
+      
+      // Burn spread to nearby enemies
+      if(e.burnSpread) {
+        for(const e2 of breads) {
+          if(!e2.alive || e2 === e) continue;
+          const dist = Math.hypot(e.x - e2.x, e.y - e2.y);
+          if(dist < 40 && Math.random() < 0.1 * dt) { // 10% chance per second
+            e2.burnDuration = Math.max(e2.burnDuration || 0, 1);
+            e2.burnDamage = (e.burnDamage || 0) * 0.5;
+          }
+        }
+      }
+      
+      if(e.hp <= 0) {
+        damageBread(e, 0, state); // Trigger death from burn
+        continue;
+      }
+    }
+    
+    // Slow effect
+    if(e.slowDuration > 0) {
+      e.slowDuration -= dt;
+      speedMultiplier *= (1 - (e.slowAmount || 0));
+    }
+    
+    // Stun effect
+    if(e.stunDuration > 0) {
+      e.stunDuration -= dt;
+      speedMultiplier = 0; // Completely stopped
+    }
+    
     // Handle special abilities
     if (e.special === 'regenerate') {
       e.regenerateTimer += effectiveDt;
@@ -31,14 +69,14 @@ export function stepBreads(dt, state){
       }
     }
     
-    let currentSpeed = e.speed;
+    let currentSpeed = e.speed * speedMultiplier;
     if (e.special === 'speed_burst') {
       e.lastSpeedBurst += effectiveDt;
       if (e.lastSpeedBurst >= 4) {
-        currentSpeed = e.speed * 2.5; // Speed burst!
+        currentSpeed = e.speed * 2.5 * speedMultiplier; // Speed burst!
         e.lastSpeedBurst = -1; // Burst for 1 second
       } else if (e.lastSpeedBurst < 0) {
-        currentSpeed = e.speed * 2.5;
+        currentSpeed = e.speed * 2.5 * speedMultiplier;
         e.lastSpeedBurst += effectiveDt;
         if (e.lastSpeedBurst >= 0) e.lastSpeedBurst = 0;
       }

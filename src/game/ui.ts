@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { TOWER_TYPES } from "./towers";
+import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers";
 import { activePowerups, POWERUP_TYPES } from "./powerups";
 import { getAbilityStatus } from "./abilities";
 import { achievements, getAchievementProgress } from "./achievements";
@@ -57,24 +57,97 @@ export const UI={
     if(!t){ sec.style.display='none'; box.innerHTML=''; return; }
     sec.style.display='block';
     const base=getTowerBase(t.type);
-    const canUpgrade = t.level < base.upgrades.length;
-    const up = canUpgrade ? base.upgrades[t.level] : null;
-    box.innerHTML=`
+    
+    // Build the branching upgrade UI
+    let upgradeHTML = '';
+    
+    // Stats display
+    const statsHTML = `
       <div class="row"><b>${t.name}</b><span class="small">ID ${t.id}</span></div>
       <div class="keyline"></div>
       <div class="small">Range: ${t.range.toFixed(0)} | Dmg: ${t.damage.toFixed(0)} | Fire/s: ${t.fireRate.toFixed(2)}${t.pierce?` | Pierce: ${t.pierce}`:''}${t.splash?` | Splash: ${t.splash}`:''}</div>
       <div class="keyline"></div>
-      ${canUpgrade?`
-        <div class="row"><div>Next: <b>${up.name}</b><div class="small">${up.tip}</div></div>
-        <button id="upgradeBtn" class="btn small" ${game.state.coins<up.cost?'disabled':''}>Upgrade (${up.cost}c)</button></div>
-      `:`<div class="small">Maxed out. Shines like new chrome.</div>`}
     `;
-    if(canUpgrade){
-      document.getElementById('upgradeBtn').onclick=()=>{
-        if(game.state.coins<up.cost) return; game.state.coins-=up.cost; this.sync(game);
-        up.effect(t); t.level++; this.float(game,t.x,t.y,'Upgrade!'); this.updateInspect(game); this.refreshCatalog(game);
-      };
+    
+    // Upgrade paths display
+    upgradeHTML += '<div class="upgrade-paths">';
+    
+    for(let pathIndex = 0; pathIndex < 3; pathIndex++) {
+      const path = base.upgradePaths[pathIndex];
+      const currentTier = t.upgradeTiers[pathIndex];
+      const nextTier = currentTier;
+      const canUpgradeThis = canUpgrade(t, pathIndex, currentTier) && currentTier < path.upgrades.length;
+      const nextUpgrade = currentTier < path.upgrades.length ? path.upgrades[currentTier] : null;
+      
+      upgradeHTML += `
+        <div class="upgrade-path">
+          <div class="path-header">
+            <strong>${path.name}</strong>
+            <span class="tier-indicator">${currentTier}/${path.upgrades.length}</span>
+          </div>
+          <div class="path-progress">
+      `;
+      
+      // Show tier bubbles
+      for(let tier = 0; tier < path.upgrades.length; tier++) {
+        const isOwned = tier < currentTier;
+        const isNext = tier === currentTier;
+        const upgrade = path.upgrades[tier];
+        
+        const bubbleClass = isOwned ? 'tier-owned' : isNext ? 'tier-next' : 'tier-locked';
+        upgradeHTML += `
+          <div class="tier-bubble ${bubbleClass}" title="${upgrade.name}: ${upgrade.tip}">
+            ${tier + 1}
+          </div>
+        `;
+      }
+      
+      upgradeHTML += '</div>';
+      
+      // Upgrade button
+      if(canUpgradeThis && nextUpgrade) {
+        const canAfford = game.state.coins >= nextUpgrade.cost;
+        upgradeHTML += `
+          <div class="upgrade-info">
+            <div class="upgrade-name">${nextUpgrade.name}</div>
+            <div class="upgrade-tip">${nextUpgrade.tip}</div>
+            <button class="btn upgrade-btn" data-path="${pathIndex}" ${!canAfford ? 'disabled' : ''}>
+              Upgrade (${nextUpgrade.cost}c)
+            </button>
+          </div>
+        `;
+      } else if(currentTier >= path.upgrades.length) {
+        upgradeHTML += '<div class="upgrade-info"><div class="maxed">Path Maxed</div></div>';
+      } else {
+        // Show why upgrade is blocked
+        const tier5Count = t.upgradeTiers.filter(tier => tier === 5).length;
+        const tier3PlusCount = t.upgradeTiers.filter(tier => tier >= 3).length;
+        
+        let blockReason = '';
+        if(nextTier === 5 && tier5Count > 0) {
+          blockReason = 'Only one Tier 5 allowed';
+        } else if(nextTier === 3 && tier3PlusCount >= 2 && currentTier < 3) {
+          blockReason = 'Max 2 paths at Tier 3+';
+        }
+        
+        upgradeHTML += `<div class="upgrade-info"><div class="blocked">${blockReason}</div></div>`;
+      }
+      
+      upgradeHTML += '</div>';
     }
+    
+    upgradeHTML += '</div>';
+    
+    box.innerHTML = statsHTML + upgradeHTML;
+    
+    // Bind upgrade button events
+    const upgradeButtons = box.querySelectorAll('.upgrade-btn');
+    upgradeButtons.forEach(btn => {
+      btn.onclick = () => {
+        const pathIndex = parseInt(btn.getAttribute('data-path'));
+        game.upgradeTowerPath(t, pathIndex);
+      };
+    });
   },
   float(game,x,y,str,isBad=false){ game.state.texts.push({x,y,str,isBad,t:0}); },
   updatePowerupDisplay(){
@@ -133,4 +206,3 @@ export const UI={
 
 // deps referenced inside UI
 import { TECHS } from "./tech";
-import { getTowerBase } from "./towers";

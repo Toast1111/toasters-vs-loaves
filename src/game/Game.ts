@@ -4,8 +4,8 @@ import { drawScene } from "./render";
 import { buildWave } from "./waves";
 import { isBuildable, waypoints } from "./map";
 import { fireFrom, projectiles, stepProjectiles } from "./projectiles";
-import { spawnCrumbs, particles, stepParticles, spawnMuzzleFlash } from "./particles";
-import { TOWER_TYPES, getTowerBase } from "./towers";
+import { spawnCrumbs, particles, stepParticles, spawnMuzzleFlash, spawnExplosion } from "./particles";
+import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers";
 import { damageBread, spawnBread, breads, stepBreads } from "./breads";
 import { stepEffects, createHeatZone, getAdaptiveTargeting, addScreenShake } from "./effects";
 import { stepPowerups, tryCollectPowerup } from "./powerups";
@@ -69,7 +69,9 @@ export class Game{
       projectileSpeed:type.base.projectileSpeed||300,
       splash:type.base.splash||0, splashDmg:type.base.splashDmg||0,
       pierce:(type.base.pierce||0)+this.state.global.pierce,
-      level:0, path:0, cooldown:0, sold:false,
+      // New upgrade path system
+      upgradeTiers:[0,0,0], // [path0, path1, path2] - tracks tier for each path
+      cooldown:0, sold:false,
       special:type.base.special||null, adaptiveBonus:0};
     return t;
   }
@@ -81,7 +83,57 @@ export class Game{
   this.state.selected=null; UI.updateInspect(this); UI.refreshCatalog(this);
   UI.float(this,t.x,t.y,`+${value}c (sold)`);
   }
-  getTowerCost(t){ const base=getTowerBase(t.type).cost; let spent=0; const ups=getTowerBase(t.type).upgrades; for(let i=0;i<t.level;i++) spent+=ups[i].cost; return base+spent; }
+  getTowerCost(t){ 
+    const base=getTowerBase(t.type).cost; 
+    let spent=0; 
+    const baseTower = getTowerBase(t.type);
+    
+    // Calculate cost based on new upgrade path system
+    for(let pathIndex = 0; pathIndex < 3; pathIndex++) {
+      const pathTier = t.upgradeTiers[pathIndex];
+      const path = baseTower.upgradePaths[pathIndex];
+      for(let tier = 0; tier < pathTier; tier++) {
+        spent += path.upgrades[tier].cost;
+      }
+    }
+    
+    return base + spent; 
+  }
+  
+  // New function to upgrade a specific path
+  upgradeTowerPath(tower, pathIndex) {
+    const baseTower = getTowerBase(tower.type);
+    const currentTier = tower.upgradeTiers[pathIndex];
+    
+    // Check if upgrade is allowed using our constraint system
+    if (!canUpgrade(tower, pathIndex, currentTier)) {
+      return false;
+    }
+    
+    const path = baseTower.upgradePaths[pathIndex];
+    if (currentTier >= path.upgrades.length) {
+      return false; // Path maxed out
+    }
+    
+    const upgrade = path.upgrades[currentTier];
+    
+    // Check if player has enough coins
+    if (this.state.coins < upgrade.cost) {
+      return false;
+    }
+    
+    // Apply the upgrade
+    this.state.coins -= upgrade.cost;
+    tower.upgradeTiers[pathIndex]++;
+    upgrade.effect(tower);
+    
+    UI.float(this, tower.x, tower.y, `${upgrade.name}!`);
+    UI.sync(this);
+    UI.updateInspect(this);
+    UI.refreshCatalog(this);
+    
+    return true;
+  }
   getSelected(){ return this.state.toasters.find(t=>t.id===this.state.selected); }
   startWave(){
     if(this.state.waveInProgress) return; this.state.wave++; UI.sync(this); UI.log(`Wave ${this.state.wave} begins!`);
@@ -134,6 +186,27 @@ export class Game{
         }
         
         if(target && t.cooldown === 0){ 
+          // Calculate actual damage with critical hits
+          let actualDamage = t._tempDamage || t.damage;
+          if(t.critChance && Math.random() < t.critChance) {
+            actualDamage *= (t.critMultiplier || 2.0);
+            UI.float(this, target.x, target.y, 'CRIT!', false);
+            
+            // Crit explosions upgrade
+            if(t.critExplosions) {
+              // Create a small explosion at target
+              spawnExplosion(target.x, target.y, 30);
+              // Damage nearby enemies
+              for(const e2 of breads) {
+                if(!e2.alive || e2 === target) continue;
+                const dist = Math.hypot(target.x - e2.x, target.y - e2.y);
+                if(dist < 50) {
+                  damageBread(e2, actualDamage * 0.3, this.state);
+                }
+              }
+            }
+          }
+          
           // Special behavior for convection ovens
           if (t.special === 'heatzone') {
             createHeatZone(target.x, target.y, 45, 8, 2.5);
@@ -142,7 +215,18 @@ export class Game{
             // Add muzzle flash
             const angle = Math.atan2(target.y - t.y, target.x - t.x);
             spawnMuzzleFlash(t.x, t.y, angle);
-            fireFrom(t, target, t._tempDamage || t.damage); 
+            fireFrom(t, target, actualDamage); 
+            
+            // Double shot upgrade
+            if(t.doubleShot && Math.random() < t.doubleShot) {
+              // Small delay for second shot
+              setTimeout(() => {
+                if(target.alive) {
+                  fireFrom(t, target, actualDamage * 0.8);
+                  spawnMuzzleFlash(t.x, t.y, angle);
+                }
+              }, 50);
+            }
           }
           
           const effectiveFireRate = t._tempFireRate || t.fireRate;
