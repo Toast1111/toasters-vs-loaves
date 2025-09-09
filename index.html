@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toasters vs Loaves — Modular</title>
+  <style>
+    :root{
+      --bg:#0f0f14;--panel:#16161d;--panel2:#1d1d27;--text:#e7e7ee;--accent:#ffb347;--accent2:#ffd166;--good:#7bd88f;--bad:#ff6b6b;--muted:#a1a1b3;--wire:#34344a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b10,#14141b);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+    .wrap{display:grid;grid-template-columns:1fr 360px;gap:10px;height:100%;padding:10px}
+    #gamePanel{position:relative;border:1px solid #27273a;border-radius:14px;overflow:hidden;background:#0c0f15}
+    canvas{display:block;background:#0a0d12}
+    .hud{position:absolute;inset:0;pointer-events:none}
+    .topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:10px;pointer-events:auto}
+    .pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.08);display:flex;gap:12px;align-items:center}
+    .pill b{color:var(--accent)}
+    .btn{cursor:pointer;user-select:none}
+    .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#222;font-weight:700;border:none}
+    .btn.small{font-size:12px;padding:6px 10px}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .side{background:var(--panel);border:1px solid #29293f;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+    .section{background:var(--panel2);border:1px solid #2d2d45;border-radius:12px;padding:10px}
+    h2,h3{margin:0 0 8px 0;font-weight:800}
+    .catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .card{background:#12121a;border:1px solid #2b2b40;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+    .placeBtn{padding:8px;border-radius:8px;border:1px dashed #3a3a56;background:#0e0e15;cursor:pointer}
+    .placeBtn:hover{background:#131321}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .small{color:var(--muted);font-size:12px}
+    .tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .tech{padding:8px;border-radius:8px;background:#131420;border:1px solid #2b2e46;display:flex;flex-direction:column;gap:6px}
+    .tech.locked{opacity:.6}
+    .tech .buy{padding:6px;border-radius:6px;background:#0d0f18;border:1px solid #2b2e46;cursor:pointer}
+    .keyline{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);margin:6px 0}
+    .log{height:120px;overflow:auto;font-family:ui-monospace,Consolas,monospace;background:#0c0f14;border:1px solid #22243a;border-radius:8px;padding:8px}
+    .hint{font-size:12px;color:var(--muted)}
+    .floating{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
+    .badge{padding:2px 6px;border-radius:6px;background:#10141f;border:1px solid #29304b;font-size:11px}
+    .tooltip{position:absolute;left:50%;transform:translate(-50%,-110%);background:#111522;border:1px solid #2b2f49;border-radius:8px;padding:6px 8px;white-space:nowrap;font-size:12px;pointer-events:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gamePanel">
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="hud">
+        <div class="topbar">
+          <div class="pill"><span>Coins: <b id="coins">0</b></span><span>Lives: <b id="lives">100</b></span><span>Wave: <b id="wave">0</b></span><span>AP (Appliance Pts): <b id="ap">0</b></span></div>
+          <button id="startBtn" class="pill btn primary">Start Wave</button>
+          <div class="pill hint">Place toasters on the counter (dark tiles). Not on the loaf path (light tiles).</div>
+        </div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="section">
+        <h2>Toaster Catalog</h2>
+        <div class="catalog" id="catalog"></div>
+        <div class="hint">Select a toaster then click the counter to place.<br/>Hold <b>Shift</b> to place multiple.</div>
+      </div>
+      <div class="section" id="inspectSection" style="display:none">
+        <h2>Selected Toaster</h2>
+        <div id="inspect"></div>
+      </div>
+      <div class="section">
+        <h2>Kitchen Tech Tree</h2>
+        <div class="tech-grid" id="tech"></div>
+        <div class="hint">AP is earned each wave. Global upgrades buff all appliances.</div>
+      </div>
+      <div class="section">
+        <h3>Controls</h3>
+        <div class="row"><span>Sell selected toaster</span><button id="sellBtn" class="btn small">Sell (80%)</button></div>
+        <div class="row"><span>Toggle range preview</span><input type="checkbox" id="rangeToggle" checked></div>
+      </div>
+      <div class="section">
+        <h3>Event Log</h3>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
