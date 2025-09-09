@@ -1,10 +1,11 @@
 // @ts-nocheck
 import { breads, damageBread } from "./breads";
 export const projectiles = [];
-export function fireFrom(t, target) {
+export function fireFrom(t, target, customDamage = null) {
     const angle = Math.atan2(target.y - t.y, target.x - t.x);
     const speed = t.projectileSpeed;
-    const p = { id: ++_id, x: t.x, y: t.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, dmg: t.damage, pierce: (t.pierce || 0), splash: t.splash || 0, splashDmg: t.splashDmg || 0, life: 2 };
+    const damage = customDamage || t.damage;
+    const p = { id: ++_id, x: t.x, y: t.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, dmg: damage, pierce: (t.pierce || 0), splash: t.splash || 0, splashDmg: t.splashDmg || 0, life: 2 };
     projectiles.push(p);
 }
 export function stepProjectiles(dt, state) {
