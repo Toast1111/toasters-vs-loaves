@@ -29,6 +29,9 @@ export function stepEffects(dt, state) {
           bread.alive = false;
           const bonus = Math.round(bread.bounty * state.global.bounty);
           state.coins += bonus;
+          // keep coins display in sync for zone kills
+          const coinsEl = document.getElementById('coins');
+          if (coinsEl) coinsEl.textContent = state.coins;
         }
       }
     }

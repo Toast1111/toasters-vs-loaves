@@ -101,7 +101,9 @@ export class Game{
       }
     }
     // enemies
-    stepBreads(dt, this.state);
+  stepBreads(dt, this.state);
+  // expose breads to state for modules that expect it
+  this.state.breads = breads;
     // towers
     if(this.state.running){
       for(const t of this.state.toasters){
@@ -150,7 +152,7 @@ export class Game{
     }
     stepProjectiles(dt, this.state);
     stepParticles(dt);
-    stepEffects(dt, this.state);
+  stepEffects(dt, this.state);
     stepPowerups(dt, this.state);
     stepAbilities(dt);
     stepStats(dt); // Track playtime and other stats

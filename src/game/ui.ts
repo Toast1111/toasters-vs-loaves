@@ -26,8 +26,11 @@ export const UI={
       const card=document.createElement('div'); card.className='card';
       card.innerHTML=`<div class="row"><b>${t.name}</b><span class="badge">${t.cost}c</span></div>
         <div class="small">${t.desc}</div>
-        <button class="placeBtn btn" ${game.state.coins<t.cost?'disabled':''}>Place</button>`;
-      card.querySelector('.placeBtn').onclick=()=>{ game.state.placing=t; };
+        <button class="placeBtn btn">Place</button>`;
+      card.querySelector('.placeBtn').onclick=()=>{
+        if(game.state.coins < t.cost){ this.log(`Need ${t.cost}c for ${t.name}.`); return; }
+        game.state.placing=t;
+      };
       catalogEl.appendChild(card);
     }
   },
