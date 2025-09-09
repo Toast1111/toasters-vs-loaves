@@ -40,6 +40,20 @@
     .floating{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
     .badge{padding:2px 6px;border-radius:6px;background:#10141f;border:1px solid #29304b;font-size:11px}
     .tooltip{position:absolute;left:50%;transform:translate(-50%,-110%);background:#111522;border:1px solid #2b2f49;border-radius:8px;padding:6px 8px;white-space:nowrap;font-size:12px;pointer-events:none}
+    .ability{display:flex;justify-content:space-between;align-items:center;padding:8px;margin:4px 0;border-radius:6px;background:#131420;border:1px solid #2b2e46}
+    .ability.ready{border-color:#4ade80;background:#1a2e1a}
+    .ability.cooldown{opacity:0.6}
+    .ability-info{flex:1}
+    .ability-key{background:#2d3748;color:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:11px;margin-left:8px}
+    .cooldown-bar{height:3px;background:#334155;border-radius:2px;margin-top:4px;overflow:hidden}
+    .cooldown-progress{height:100%;background:#ef4444;transition:width 0.1s}
+    .achievement{display:flex;align-items:center;padding:6px;margin:3px 0;border-radius:6px;background:#131420;border:1px solid #2b2e46}
+    .achievement.unlocked{border-color:#4ade80;background:#1a2e1a}
+    .achievement.locked{opacity:0.5}
+    .achievement-icon{font-size:16px;margin-right:8px;min-width:20px}
+    .achievement-text{flex:1;font-size:11px}
+    .achievement-name{font-weight:bold;margin-bottom:2px}
+    .achievement-desc{color:#a1a1b3}
   </style>
 </head>
 <body>
@@ -49,8 +63,9 @@
       <div class="hud">
         <div class="topbar">
           <div class="pill"><span>Coins: <b id="coins">0</b></span><span>Lives: <b id="lives">100</b></span><span>Wave: <b id="wave">0</b></span><span>AP (Appliance Pts): <b id="ap">0</b></span></div>
+          <div class="pill" id="powerupDisplay" style="display:none;"><span>Active: <span id="activePowerups"></span></span></div>
           <button id="startBtn" class="pill btn primary">Start Wave</button>
-          <div class="pill hint">Place toasters on the counter (dark tiles). Not on the loaf path (light tiles).</div>
+          <div class="pill hint">Place toasters on the counter (dark tiles). Not on the loaf path (light tiles). Click powerups to collect!</div>
         </div>
       </div>
     </div>
@@ -70,9 +85,21 @@
         <div class="hint">AP is earned each wave. Global upgrades buff all appliances.</div>
       </div>
       <div class="section">
+        <h3>Special Abilities</h3>
+        <div id="abilitiesDisplay">
+          <div class="hint">Hotkeys: Q, W, E, R. Abilities cost coins except Emergency Coins.</div>
+        </div>
+      </div>
+      <div class="section">
         <h3>Controls</h3>
         <div class="row"><span>Sell selected toaster</span><button id="sellBtn" class="btn small">Sell (80%)</button></div>
         <div class="row"><span>Toggle range preview</span><input type="checkbox" id="rangeToggle" checked></div>
+      </div>
+      <div class="section">
+        <h3>Achievements</h3>
+        <div id="achievementsDisplay">
+          <div class="hint">Complete challenges to unlock achievements!</div>
+        </div>
       </div>
       <div class="section">
         <h3>Event Log</h3>
