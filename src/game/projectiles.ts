@@ -47,87 +47,129 @@ export function fireFrom(t, target, customDamage = null){
 
 export function stepProjectiles(dt, state){
   for(const p of projectiles){ 
-    // Homing behavior
-    if(p.homing && p.life > 0.5) {
-      let closestEnemy = null;
-      let closestDist = Infinity;
+    // Handle explosive projectiles differently
+    if(p.explosive) {
+      // Explosive projectiles use lifetime instead of life
+      p.x += p.vx * dt; 
+      p.y += p.vy * dt; 
+      p.lifetime -= dt;
+      
+      // Check for collision with enemies
+      let hitEnemy = false;
       for(const e of breads) {
         if(!e.alive) continue;
-        const dist = Math.hypot(p.x - e.x, p.y - e.y);
-        if(dist < closestDist && dist < 200) { // Homing range
-          closestDist = dist;
-          closestEnemy = e;
+        if(Math.hypot(p.x - e.x, p.y - e.y) <= e.r) {
+          hitEnemy = true;
+          break;
         }
       }
-      if(closestEnemy) {
-        const targetAngle = Math.atan2(closestEnemy.y - p.y, closestEnemy.x - p.x);
-        const currentAngle = Math.atan2(p.vy, p.vx);
-        const angleDiff = targetAngle - currentAngle;
-        const turnRate = 3.0; // Turn speed
-        const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnRate * dt);
-        const speed = Math.hypot(p.vx, p.vy);
-        p.vx = Math.cos(newAngle) * speed;
-        p.vy = Math.sin(newAngle) * speed;
+      
+      // Explode on impact or when lifetime expires
+      if(hitEnemy || p.lifetime <= 0) {
+        // Create explosion at projectile location
+        import('./particles').then(({spawnExplosion}) => {
+          spawnExplosion(p.x, p.y, Math.floor(p.explosionRadius / 3));
+        }).catch(err => console.warn('Failed to spawn explosion:', err));
+        
+        // Damage all enemies in explosion radius
+        for(const e of breads) {
+          if(!e.alive) continue;
+          const dist = Math.hypot(p.x - e.x, p.y - e.y);
+          if(dist <= p.explosionRadius) {
+            // Damage falloff with distance
+            const falloff = Math.max(0.3, 1 - (dist / p.explosionRadius));
+            const explosionDamage = p.damage * falloff;
+            damageBread(e, explosionDamage, state);
+          }
+        }
+        
+        p.dead = true;
+        continue;
       }
-    }
-    
-    p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; 
-    if(p.life<=0) p.dead=true;
-    
-    for(const e of breads){ 
-      if(!e.alive) continue; 
-      if(Math.hypot(p.x-e.x,p.y-e.y)<=e.r){
-        damageBread(e,p.dmg,state);
-        
-        // Apply status effects
-        if(p.burnChance > 0 && Math.random() < p.burnChance) {
-          applyBurn(e, p.burnDamage, p.burnSpread);
+    } else {
+      // Standard projectile behavior
+      // Homing behavior
+      if(p.homing && p.life > 0.5) {
+        let closestEnemy = null;
+        let closestDist = Infinity;
+        for(const e of breads) {
+          if(!e.alive) continue;
+          const dist = Math.hypot(p.x - e.x, p.y - e.y);
+          if(dist < closestDist && dist < 200) { // Homing range
+            closestDist = dist;
+            closestEnemy = e;
+          }
         }
-        if(p.slowChance > 0 && Math.random() < p.slowChance) {
-          applySlow(e, p.slowAmount);
+        if(closestEnemy) {
+          const targetAngle = Math.atan2(closestEnemy.y - p.y, closestEnemy.x - p.x);
+          const currentAngle = Math.atan2(p.vy, p.vx);
+          const angleDiff = targetAngle - currentAngle;
+          const turnRate = 3.0; // Turn speed
+          const newAngle = currentAngle + Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), turnRate * dt);
+          const speed = Math.hypot(p.vx, p.vy);
+          p.vx = Math.cos(newAngle) * speed;
+          p.vy = Math.sin(newAngle) * speed;
         }
-        if(p.stunChance > 0 && Math.random() < p.stunChance) {
-          applyStun(e, p.stunDuration);
-        }
-        
-        // Splash damage
-        if(p.splash>0){ 
-          for(const e2 of breads){ 
-            if(!e2.alive) continue; 
-            const d=Math.hypot(p.x-e2.x,p.y-e2.y); 
-            if(d<=p.splash && e2!==e){ 
-              damageBread(e2,p.splashDmg,state);
-              // Apply status effects to splash targets too
-              if(p.burnChance > 0 && Math.random() < p.burnChance * 0.5) {
-                applyBurn(e2, p.burnDamage * 0.7, false);
-              }
+      }
+      
+      p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; 
+      if(p.life<=0) p.dead=true;
+      
+      for(const e of breads){ 
+        if(!e.alive) continue; 
+        if(Math.hypot(p.x-e.x,p.y-e.y)<=e.r){
+          damageBread(e,p.dmg,state);
+          
+          // Apply status effects
+          if(p.burnChance > 0 && Math.random() < p.burnChance) {
+            applyBurn(e, p.burnDamage, p.burnSpread);
+          }
+          if(p.slowChance > 0 && Math.random() < p.slowChance) {
+            applySlow(e, p.slowAmount);
+          }
+          if(p.stunChance > 0 && Math.random() < p.stunChance) {
+            applyStun(e, p.stunDuration);
+          }
+          
+          // Splash damage
+          if(p.splash>0){ 
+            for(const e2 of breads){ 
+              if(!e2.alive) continue; 
+              const d=Math.hypot(p.x-e2.x,p.y-e2.y); 
+              if(d<=p.splash && e2!==e){ 
+                damageBread(e2,p.splashDmg,state);
+                // Apply status effects to splash targets too
+                if(p.burnChance > 0 && Math.random() < p.burnChance * 0.5) {
+                  applyBurn(e2, p.burnDamage * 0.7, false);
+                }
+              } 
             } 
-          } 
-        }
-        
-        // Ricochet behavior
-        if(p.ricochet && p.bounceCount > 0) {
-          let nextTarget = null;
-          let closestDist = Infinity;
-          for(const e2 of breads) {
-            if(!e2.alive || e2 === e) continue;
-            const dist = Math.hypot(p.x - e2.x, p.y - e2.y);
-            if(dist < closestDist && dist < 150) { // Ricochet range
-              closestDist = dist;
-              nextTarget = e2;
+          }
+          
+          // Ricochet behavior
+          if(p.ricochet && p.bounceCount > 0) {
+            let nextTarget = null;
+            let closestDist = Infinity;
+            for(const e2 of breads) {
+              if(!e2.alive || e2 === e) continue;
+              const dist = Math.hypot(p.x - e2.x, p.y - e2.y);
+              if(dist < closestDist && dist < 150) { // Ricochet range
+                closestDist = dist;
+                nextTarget = e2;
+              }
+            }
+            if(nextTarget) {
+              const newAngle = Math.atan2(nextTarget.y - p.y, nextTarget.x - p.x);
+              const speed = Math.hypot(p.vx, p.vy) * 0.8; // Slight speed reduction
+              p.vx = Math.cos(newAngle) * speed;
+              p.vy = Math.sin(newAngle) * speed;
+              p.bounceCount--;
+              continue; // Don't pierce/die, ricochet instead
             }
           }
-          if(nextTarget) {
-            const newAngle = Math.atan2(nextTarget.y - p.y, nextTarget.x - p.x);
-            const speed = Math.hypot(p.vx, p.vy) * 0.8; // Slight speed reduction
-            p.vx = Math.cos(newAngle) * speed;
-            p.vy = Math.sin(newAngle) * speed;
-            p.bounceCount--;
-            continue; // Don't pierce/die, ricochet instead
-          }
+          
+          if(p.pierce>0) p.pierce--; else { p.dead=true; break; }
         }
-        
-        if(p.pierce>0) p.pierce--; else { p.dead=true; break; }
       }
     }
   }
