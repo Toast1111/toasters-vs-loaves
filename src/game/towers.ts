@@ -2,7 +2,7 @@
 export const RARITY={COMMON:1, RARE:1.15, EPIC:1.35, LEGENDARY:1.6};
 
 // Upgrade path system: Each tower has 3 paths with 5 tiers each
-// Rules: Can upgrade to tier 2 on two paths, but only tier 5 on one path
+// Rules: All paths can reach Tier 2. Only one path can reach tiers 3, 4, and 5.
 // Path 0: Usually damage/offense focused
 // Path 1: Usually utility/support focused  
 // Path 2: Usually special mechanics/unique abilities
@@ -412,8 +412,7 @@ export const TOWER_TYPES=[
 
 // Upgrade path constraints like BTD6
 export const UPGRADE_CONSTRAINTS = {
-  maxTier5Paths: 1,  // Only one path can go to tier 5
-  maxTier3Paths: 2,  // Two paths can go to tier 3+ 
+  maxTier5Paths: 1,  // Only one path can go to tier 5 (implied by single path > 2)
   maxTiers: 5        // 5 tiers per path
 };
 
@@ -427,31 +426,14 @@ export function canUpgrade(tower, pathIndex, currentTier) {
   // Check if we're trying to exceed max tiers
   if (nextTier > constraints.maxTiers) return false;
   
-  // Count how many paths are at tier 3+
-  const tier3Plus = tower.upgradeTiers.filter(tier => tier >= 3).length;
-  
-  // Count how many paths are at tier 5
-  const tier5Paths = tower.upgradeTiers.filter(tier => tier === 5).length;
-  
-  // If trying to upgrade to tier 5
-  if (nextTier === 5) {
-    // Only allowed if no other path is at tier 5
-    return tier5Paths === 0;
+  // Only restriction: at most one path may exceed Tier 2 (tiers 3–5)
+  if (nextTier >= 3) {
+    const pathsAt3Plus = tower.upgradeTiers.filter(tier => tier >= 3).length;
+    const thisPathAt3Plus = tower.upgradeTiers[pathIndex] >= 3;
+    // Allow if this path is already the 3+ path, else only if none exist yet
+    return thisPathAt3Plus || pathsAt3Plus === 0;
   }
   
-  // If trying to upgrade to tier 4
-  if (nextTier === 4) {
-    // Only allowed if this would be the potential tier 5 path (no other path at tier 5)
-    return tier5Paths === 0;
-  }
-  
-  // If trying to upgrade to tier 3
-  if (nextTier === 3) {
-    // Only allowed if less than 2 paths are at tier 3+, OR this path is already at tier 3+
-    const currentPathAlreadyTier3Plus = tower.upgradeTiers[pathIndex] >= 3;
-    return currentPathAlreadyTier3Plus || tier3Plus < constraints.maxTier3Paths;
-  }
-  
-  // Tiers 1-2 are always allowed
+  // Tiers 1–2 are always allowed on all paths
   return true;
 }

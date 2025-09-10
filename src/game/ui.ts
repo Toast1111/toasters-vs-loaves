@@ -119,19 +119,15 @@ export const UI={
       } else if(currentTier >= path.upgrades.length) {
         upgradeHTML += '<div class="upgrade-info"><div class="maxed">Path Maxed</div></div>';
       } else {
-        // Show why upgrade is blocked
+        // Show why upgrade is blocked (only one path can exceed Tier 2)
         const nextTier = currentTier + 1;
-        const tier5Count = t.upgradeTiers.filter(tier => tier === 5).length;
-        const tier3PlusCount = t.upgradeTiers.filter(tier => tier >= 3).length;
+        const pathsAt3Plus = t.upgradeTiers.filter(tier => tier >= 3).length;
+        const thisPathAt3Plus = t.upgradeTiers[pathIndex] >= 3;
         
         let blockReason = '';
-        if(nextTier === 5 && tier5Count > 0) {
-          blockReason = 'Only one Tier 5 allowed';
-        } else if(nextTier === 4 && tier5Count > 0) {
-          blockReason = 'Another path already at Tier 5';
-        } else if(nextTier === 3 && tier3PlusCount >= 2 && currentTier < 3) {
-          blockReason = 'Max 2 paths at Tier 3+';
-        } else if(nextUpgrade) {
+        if (nextTier >= 3 && pathsAt3Plus > 0 && !thisPathAt3Plus) {
+          blockReason = 'Only one path may exceed Tier 2';
+        } else if (nextUpgrade && game.state.coins < nextUpgrade.cost) {
           blockReason = `Need ${nextUpgrade.cost} coins`;
         }
         
