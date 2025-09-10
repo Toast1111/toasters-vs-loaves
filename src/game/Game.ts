@@ -170,21 +170,10 @@ export class Game{
         
         // Special targeting for adaptive towers
         let target = null;
-        let hasEnemiesInRange = false;
-        
         if (t.special === 'adaptive') {
           const enemiesInRange = breads.filter(e => 
             e.alive && Math.hypot(e.x - t.x, e.y - t.y) <= t.range);
           target = getAdaptiveTargeting(t, enemiesInRange);
-          hasEnemiesInRange = enemiesInRange.length > 0;
-        } else if (t.tackShooter) {
-          // Tack shooter doesn't need specific target, just enemies in range (unless alwaysFire is true)
-          if (t.alwaysFire) {
-            hasEnemiesInRange = true; // Always fire regardless of enemies
-          } else {
-            hasEnemiesInRange = breads.some(e => 
-              e.alive && Math.hypot(e.x - t.x, e.y - t.y) <= t.range);
-          }
         } else {
           // Standard targeting: closest-to-exit in range
           let best = Infinity;
@@ -192,7 +181,6 @@ export class Game{
             if(!e.alive) continue; 
             const d = Math.hypot(e.x-t.x, e.y-t.y); 
             if(d <= t.range){
-              hasEnemiesInRange = true;
               const score = (1000-e.wpt*50) + d*0.1; 
               if(score < best){ best = score; target = e; }
             }
@@ -252,15 +240,15 @@ export class Game{
             }
           }
         }
-        if(!suppressNormalShot && t.cooldown === 0 && (target || (t.tackShooter && hasEnemiesInRange))){ 
+        if(!suppressNormalShot && target && t.cooldown === 0){ 
           // Calculate actual damage with critical hits
           let actualDamage = t._tempDamage || t.damage;
           if(t.critChance && Math.random() < t.critChance) {
             actualDamage *= (t.critMultiplier || 2.0);
-            if(target) UI.float(this, target.x, target.y, 'CRIT!', false);
+            UI.float(this, target.x, target.y, 'CRIT!', false);
             
             // Crit explosions upgrade
-            if(t.critExplosions && target) {
+            if(t.critExplosions) {
               // Create a small explosion at target
               spawnExplosion(target.x, target.y, 30);
               // Damage nearby enemies
@@ -278,65 +266,6 @@ export class Game{
           if (t.special === 'heatzone') {
             createHeatZone(target.x, target.y, 45, 8, 2.5);
             addScreenShake(3, 0.15);
-          } else if (t.tackShooter) {
-            // Pressure cooker tack shooter - shoots in all directions
-            const tackCount = t.tackCount || 8;
-            const angleStep = (Math.PI * 2) / tackCount;
-            
-            for (let i = 0; i < tackCount; i++) {
-              const angle = i * angleStep;
-              spawnMuzzleFlash(t.x, t.y, angle);
-              
-              const projectile = {
-                x: t.x, y: t.y,
-                vx: Math.cos(angle) * (t.projectileSpeed * 0.8),
-                vy: Math.sin(angle) * (t.projectileSpeed * 0.8),
-                damage: actualDamage,
-                lifetime: t.projectileLifetime || 0.4,
-                explosive: t.explosiveProjectiles || false,
-                explosionRadius: t.explosionRadius || 30,
-                source: t
-              };
-              projectiles.push(projectile);
-            }
-          } else if (t.explosiveProjectiles || t.radialExplosion) {
-            // Legacy explosive projectiles (for other towers)
-            const angle = Math.atan2(target.y - t.y, target.x - t.x);
-            spawnMuzzleFlash(t.x, t.y, angle);
-            
-            // Create short-lived explosive projectile
-            const projectile = {
-              x: t.x, y: t.y, 
-              vx: Math.cos(angle) * (t.projectileSpeed * 0.7), 
-              vy: Math.sin(angle) * (t.projectileSpeed * 0.7),
-              damage: actualDamage,
-              lifetime: t.projectileLifetime || 0.3,
-              explosive: true,
-              explosionRadius: t.explosionRadius || 40,
-              source: t
-            };
-            projectiles.push(projectile);
-            
-            // Continuous bursts create multiple projectiles
-            if (t.continuousBursts) {
-              for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                  const burstAngle = angle + (Math.random() - 0.5) * 0.8;
-                  const burstProjectile = {
-                    x: t.x, y: t.y,
-                    vx: Math.cos(burstAngle) * (t.projectileSpeed * 0.5),
-                    vy: Math.sin(burstAngle) * (t.projectileSpeed * 0.5),
-                    damage: actualDamage * 0.6,
-                    lifetime: t.projectileLifetime || 0.2,
-                    explosive: true,
-                    explosionRadius: t.explosionRadius || 40,
-                    source: t
-                  };
-                  projectiles.push(burstProjectile);
-                  spawnMuzzleFlash(t.x, t.y, burstAngle);
-                }, i * 100);
-              }
-            }
           } else {
             // Add muzzle flash
             const angle = Math.atan2(target.y - t.y, target.x - t.x);
