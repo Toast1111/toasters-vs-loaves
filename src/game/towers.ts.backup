@@ -1,0 +1,2 @@
+// This file has been moved to towers.ts.backup to avoid conflicts with the modular tower system
+// The new tower system is in ./towers/index.ts

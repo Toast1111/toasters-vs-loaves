@@ -5,7 +5,7 @@ import { buildWave } from "./waves";
 import { isBuildable, waypoints } from "./map";
 import { fireFrom, projectiles, stepProjectiles } from "./projectiles";
 import { spawnCrumbs, particles, stepParticles, spawnMuzzleFlash, spawnExplosion } from "./particles";
-import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers";
+import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers/index";
 import { damageBread, spawnBread, breads, stepBreads } from "./breads";
 import { stepEffects, createHeatZone, getAdaptiveTargeting, addScreenShake } from "./effects";
 import { stepPowerups, tryCollectPowerup } from "./powerups";
@@ -187,7 +187,60 @@ export class Game{
           }
         }
         
-        if(target && t.cooldown === 0){ 
+        // Charge-shot mode: tier 3+ on Air Fryer path 2 replaces normal attack with charge system
+        let suppressNormalShot = false;
+        if (t.chargeShot) {
+          suppressNormalShot = true; // Always suppress normal shots in charge mode
+          
+          // Find enemies in range to decide charge or fire
+          const enemiesInRange = breads.filter(e => e.alive && Math.hypot(e.x - t.x, e.y - t.y) <= t.range);
+          
+          // Charging logic
+          if ((t._gatlingTime||0) <= 0) {
+            if (enemiesInRange.length > 0) {
+              t._charge = (t._charge || 0) + dt;
+            } else {
+              t._charge = Math.max(0, (t._charge||0) - dt*0.5); // bleed off when no targets
+            }
+            
+            // When fully charged, begin barrage
+            if ((t._charge||0) >= (t.chargeTime||2)) {
+              t._gatlingTime = t.gatlingDuration || 1.2;
+              t._charge = 0;
+            }
+          }
+          
+          // During barrage: fire a cone of rapid shots
+          if ((t._gatlingTime||0) > 0) {
+            t._gatlingTime -= dt;
+            // Rate control
+            t._gatlingCooldown = Math.max(0, (t._gatlingCooldown||0) - dt);
+            if (t._gatlingCooldown === 0) {
+              // Aim toward average direction of nearby enemies; fallback any
+              let aimX = 0, aimY = 0, count = 0;
+              for (const e of enemiesInRange) { aimX += e.x; aimY += e.y; count++; }
+              let baseAngle;
+              if (count > 0) {
+                aimX /= count; aimY /= count; baseAngle = Math.atan2(aimY - t.y, aimX - t.x);
+              } else if (target) {
+                baseAngle = Math.atan2(target.y - t.y, target.x - t.x);
+              } else {
+                baseAngle = 0; // default
+              }
+              const cone = t.coneRadians || 0.8;
+              const shots = 6; // per volley
+              for (let i = 0; i < shots; i++) {
+                const offset = (Math.random()-0.5)*cone;
+                const dummyTarget = { x: t.x + Math.cos(baseAngle+offset)*t.range, y: t.y + Math.sin(baseAngle+offset)*t.range };
+                fireFrom(t, dummyTarget, t.damage*0.8); // Increased damage since this replaces normal attack
+                const angle = baseAngle + offset;
+                spawnMuzzleFlash(t.x, t.y, angle);
+              }
+              t._gatlingCooldown = 1 / (t.gatlingRate || 18);
+            }
+          }
+        }
+        if(!suppressNormalShot && target && t.cooldown === 0){ 
           // Calculate actual damage with critical hits
           let actualDamage = t._tempDamage || t.damage;
           if(t.critChance && Math.random() < t.critChance) {

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers";
+import { TOWER_TYPES, getTowerBase, canUpgrade } from "./towers/index";
 import { activePowerups, POWERUP_TYPES } from "./powerups";
 import { getAbilityStatus } from "./abilities";
 import { achievements, getAchievementProgress } from "./achievements";

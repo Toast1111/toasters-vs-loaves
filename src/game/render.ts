@@ -5,7 +5,7 @@ import { projectiles } from "./projectiles";
 import { particles, damageNumbers } from "./particles";
 import { heatZones, screenShake } from "./effects";
 import { powerups, activePowerups, POWERUP_TYPES } from "./powerups";
-import { getTowerBase } from "./towers";
+import { getTowerBase } from "./towers/index";
 import { roundedRect } from "./drawUtils";
 
 export function drawScene(ctx, state){
