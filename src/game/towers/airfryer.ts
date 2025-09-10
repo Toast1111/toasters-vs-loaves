@@ -121,41 +121,43 @@ const airfryer = {
     ctx.rotate(hinge);
     // Basket glass
     ctx.fillStyle = glass; roundedRect(ctx, -14, -6, 28, 12, 3.5);
-    // Circulation ring (spins) + progress arc
-    ctx.save();
-  ctx.translate(0, 3);
-    ctx.rotate(t._ring);
-  ctx.strokeStyle = accent; ctx.lineWidth = 1.8;
-  ctx.setLineDash([7, 6]);
-  ctx.beginPath(); ctx.arc(0, 0, 9.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-    
-    // Progress arc shows charging status
-    if ((t.chargeShot || 0) && (t._gatlingTime||0) <= 0) {
-      const prog = Math.min(1, ((t._charge||0) / (t.chargeTime||2)) || 0);
-      if (prog > 0) {
-        // Color changes as it charges: blue -> yellow -> red
-        let progressColor;
-        if (prog < 0.5) {
-          progressColor = `rgb(${Math.floor(154 + prog * 200)}, ${Math.floor(168 + prog * 174)}, 255)`;
-        } else {
-          const redProg = (prog - 0.5) * 2;
-          progressColor = `rgb(255, ${Math.floor(255 - redProg * 100)}, ${Math.floor(255 - redProg * 255)})`;
+    // Circulation ring (spins) + progress arc - only show if charge shot is unlocked
+    if (t.chargeShot) {
+      ctx.save();
+      ctx.translate(0, 3);
+      ctx.rotate(t._ring);
+      ctx.strokeStyle = accent; ctx.lineWidth = 1.8;
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath(); ctx.arc(0, 0, 9.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Progress arc shows charging status
+      if ((t._gatlingTime||0) <= 0) {
+        const prog = Math.min(1, ((t._charge||0) / (t.chargeTime||2)) || 0);
+        if (prog > 0) {
+          // Color changes as it charges: blue -> yellow -> red
+          let progressColor;
+          if (prog < 0.5) {
+            progressColor = `rgb(${Math.floor(154 + prog * 200)}, ${Math.floor(168 + prog * 174)}, 255)`;
+          } else {
+            const redProg = (prog - 0.5) * 2;
+            progressColor = `rgb(255, ${Math.floor(255 - redProg * 100)}, ${Math.floor(255 - redProg * 255)})`;
+          }
+          ctx.strokeStyle = progressColor; 
+          ctx.lineWidth = 3.0; // Thicker for visibility
+          ctx.beginPath(); 
+          ctx.arc(0, 0, 11.5, -Math.PI/2, -Math.PI/2 + prog * Math.PI * 2);
+          ctx.stroke();
         }
-        ctx.strokeStyle = progressColor; 
-        ctx.lineWidth = 3.0; // Thicker for visibility
-        ctx.beginPath(); 
-        ctx.arc(0, 0, 11.5, -Math.PI/2, -Math.PI/2 + prog * Math.PI * 2);
-        ctx.stroke();
       }
+      
+      // During barrage, show spinning indicator
+      if ((t._gatlingTime||0) > 0) {
+        ctx.strokeStyle = '#ff6666'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
     }
-    
-    // During barrage, show spinning indicator
-    if ((t._gatlingTime||0) > 0) {
-      ctx.strokeStyle = '#ff6666'; ctx.lineWidth = 2.5;
-      ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.restore();
     // Handle
     ctx.fillStyle = handle; roundedRect(ctx, -10, 7, 20, 6, 3);
     ctx.restore();
