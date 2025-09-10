@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { drawDefaultToaster } from '../drawUtils';
 
 const microwave = {
   key:'microwave', name:'Microwave', cost:260, rarity:RARITY.EPIC,
@@ -51,7 +52,8 @@ const microwave = {
          effect:t=>{t.fireRate+=4.0; t.timeManipulation=true; t.temporalAcceleration=true; t.slowsTime=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){ drawDefaultToaster(ctx); }
 };
 
 export default microwave;

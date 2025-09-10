@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { drawDefaultToaster } from '../drawUtils';
 
 const basic = {
   key:'basic', name:'Counter Toaster', cost:100, rarity:RARITY.COMMON, 
@@ -51,7 +52,8 @@ const basic = {
          effect:t=>{t.fireRate+=2.0; t.pierce+=3; t.projectileSplit=3; t.doubleShot=0.8;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){ drawDefaultToaster(ctx); }
 };
 
 export default basic;

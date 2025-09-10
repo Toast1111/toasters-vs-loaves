@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { roundedRect } from '../drawUtils';
 
 const industrial = {
   key:'industrial', name:'Industrial Toaster', cost:580, rarity:RARITY.LEGENDARY,
@@ -51,7 +52,14 @@ const industrial = {
          effect:t=>{t.range=9999; t.splash+=200; t.realityReflection=true; t.cosmicMirror=true; t.universalReflection=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){
+    ctx.fillStyle="#778899"; roundedRect(ctx,-20,-18,40,36,8);
+    ctx.fillStyle="#c0c0c0"; roundedRect(ctx,-18,-16,36,14,6);
+    ctx.fillStyle="#1a1a1a"; roundedRect(ctx,-14,-10,28,12,4);
+    // Chrome shine effect
+    ctx.fillStyle="#ffffff44"; roundedRect(ctx,-16,-14,8,3,2);
+  }
 };
 
 export default industrial;

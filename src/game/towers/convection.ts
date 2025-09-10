@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { roundedRect } from '../drawUtils';
 
 const convection = {
   key:'convection', name:'Convection Oven', cost:420, rarity:RARITY.EPIC,
@@ -51,7 +52,17 @@ const convection = {
          effect:t=>{t.range=9999; t.stellarControl=true; t.solarManipulation=true; t.starPower=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){
+    ctx.fillStyle="#c67e3b"; roundedRect(ctx,-18,-16,36,32,8);
+    ctx.fillStyle="#e2945a"; roundedRect(ctx,-16,-14,32,12,6);
+    ctx.fillStyle="#8b4513"; roundedRect(ctx,-12,-8,24,8,4);
+    // Heat wave effect
+    ctx.strokeStyle="#ff6b35aa"; ctx.lineWidth=1;
+    for(let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(0,0,12+i*4,0,Math.PI*2); ctx.stroke();
+    }
+  }
 };
 
 export default convection;

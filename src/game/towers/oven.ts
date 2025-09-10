@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { drawDefaultToaster } from '../drawUtils';
 
 const oven = {
   key:'oven', name:'Mini Oven', cost:220, rarity:RARITY.RARE,
@@ -51,7 +52,8 @@ const oven = {
          effect:t=>{t.range=9999; t.multiTarget=8; t.orbitalStrike=true; t.mapWideBombardment=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){ drawDefaultToaster(ctx); }
 };
 
 export default oven;

@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { roundedRect } from '../drawUtils';
 
 const airfryer = {
   key:'airfryer', name:'Air Fryer', cost:340, rarity:RARITY.EPIC,
@@ -51,7 +52,16 @@ const airfryer = {
          effect:t=>{t.fireRate+=6.0; t.multiShot=8; t.realityBendingWinds=true; t.dimensionalVortex=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){
+    // Air Fryer visual
+    ctx.fillStyle="#8a7ca8"; roundedRect(ctx,-16,-14,32,28,6);
+    ctx.fillStyle="#b8a9c9"; roundedRect(ctx,-14,-12,28,10,4);
+    ctx.fillStyle="#2b2f3c"; ctx.fillRect(-8,-6,6,4); ctx.fillRect(2,-6,6,4);
+    // Air circulation indicator
+    ctx.strokeStyle="#6a5aed"; ctx.lineWidth=2; 
+    ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.stroke();
+  }
 };
 
 export default airfryer;

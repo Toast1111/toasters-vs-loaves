@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Aggregates all tower definitions and exposes helpers and constraints
 export { RARITY } from './shared';
 
 import basic from './basic';
@@ -14,13 +15,14 @@ export const TOWER_TYPES = [
   basic, wide, oven, microwave, airfryer, convection, industrial, chef
 ];
 
+export function getTowerBase(key){ return TOWER_TYPES.find(t=>t.key===key); }
+
 export const UPGRADE_CONSTRAINTS = {
   maxTier5Paths: 1,
   maxTiers: 5
 };
 
-export function getTowerBase(k){ return TOWER_TYPES.find(t=>t.key===k); }
-
+// Only one path can exceed Tier 2 (tiers 3–5)
 export function canUpgrade(tower, pathIndex, currentTier) {
   const nextTier = currentTier + 1;
   if (nextTier > UPGRADE_CONSTRAINTS.maxTiers) return false;

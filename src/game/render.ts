@@ -5,6 +5,8 @@ import { projectiles } from "./projectiles";
 import { particles, damageNumbers } from "./particles";
 import { heatZones, screenShake } from "./effects";
 import { powerups, activePowerups, POWERUP_TYPES } from "./powerups";
+import { getTowerBase } from "./towers";
+import { roundedRect } from "./drawUtils";
 
 export function drawScene(ctx, state){
   const W=state.w, H=state.h;
@@ -196,44 +198,16 @@ export function drawScene(ctx, state){
   }
   for(const t of state.toasters){
     ctx.save(); ctx.translate(t.x,t.y);
-    
-    // Different visual styles for different tower types
-    if (t.type === 'airfryer') {
-      ctx.fillStyle="#8a7ca8"; roundedRect(ctx,-16,-14,32,28,6);
-      ctx.fillStyle="#b8a9c9"; roundedRect(ctx,-14,-12,28,10,4);
-      ctx.fillStyle="#2b2f3c"; ctx.fillRect(-8,-6,6,4); ctx.fillRect(2,-6,6,4);
-      // Air circulation indicator
-      ctx.strokeStyle="#6a5aed"; ctx.lineWidth=2; 
-      ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.stroke();
-    } else if (t.type === 'convection') {
-      ctx.fillStyle="#c67e3b"; roundedRect(ctx,-18,-16,36,32,8);
-      ctx.fillStyle="#e2945a"; roundedRect(ctx,-16,-14,32,12,6);
-      ctx.fillStyle="#8b4513"; roundedRect(ctx,-12,-8,24,8,4);
-      // Heat wave effect
-      ctx.strokeStyle="#ff6b35aa"; ctx.lineWidth=1;
-      for(let i = 0; i < 3; i++) {
-        ctx.beginPath(); ctx.arc(0,0,12+i*4,0,Math.PI*2); ctx.stroke();
-      }
-    } else if (t.type === 'industrial') {
-      ctx.fillStyle="#778899"; roundedRect(ctx,-20,-18,40,36,8);
-      ctx.fillStyle="#c0c0c0"; roundedRect(ctx,-18,-16,36,14,6);
-      ctx.fillStyle="#1a1a1a"; roundedRect(ctx,-14,-10,28,12,4);
-      // Chrome shine effect
-      ctx.fillStyle="#ffffff44"; roundedRect(ctx,-16,-14,8,3,2);
-    } else if (t.type === 'chef') {
-      ctx.fillStyle="#9932cc"; roundedRect(ctx,-16,-14,32,28,6);
-      ctx.fillStyle="#dda0dd"; roundedRect(ctx,-14,-12,28,10,4);
-      // AI indicator
-      ctx.fillStyle="#00ff00"; ctx.beginPath(); ctx.arc(8,0,3,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle="#0066ff"; ctx.beginPath(); ctx.arc(-8,0,3,0,Math.PI*2); ctx.fill();
+    const def = getTowerBase(t.type);
+    if (def && typeof def.draw === 'function') {
+      def.draw(ctx, t, state);
     } else {
-      // Default toaster style
+      // Fallback default toaster style
       ctx.fillStyle="#9aa3b2"; roundedRect(ctx,-16,-14,32,28,6);
       ctx.fillStyle="#cfd6e2"; roundedRect(ctx,-14,-12,28,10,4);
       ctx.fillStyle="#2b2f3c"; ctx.fillRect(-10,-6,8,4); ctx.fillRect(2,-6,8,4);
       ctx.fillStyle="#1e2230"; ctx.beginPath(); ctx.arc(12,4,4,0,Math.PI*2); ctx.fill();
     }
-    
     if(state.showRanges && (!state.selected || state.selected===t.id)){ 
       ctx.strokeStyle="#3a445f66"; ctx.beginPath(); ctx.arc(0,0,t.range,0,Math.PI*2); ctx.stroke(); 
     }
@@ -323,4 +297,4 @@ export function drawScene(ctx, state){
     ctx.restore();
   }
 }
-function roundedRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); }
+// moved to drawUtils.ts

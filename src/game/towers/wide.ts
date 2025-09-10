@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { drawDefaultToaster } from '../drawUtils';
 
 const wide = {
   key:'wide', name:'4‑Slot Toaster', cost:160, rarity:RARITY.RARE,
@@ -51,7 +52,8 @@ const wide = {
          effect:t=>{t.fireRate+=2.0; t.aiControl=true; t.adaptiveTargeting=true; t.networkBoost=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){ drawDefaultToaster(ctx); }
 };
 
 export default wide;

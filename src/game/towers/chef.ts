@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { RARITY } from './shared';
+import { roundedRect } from '../drawUtils';
 
 const chef = {
   key:'chef', name:'Chef Special Toaster', cost:480, rarity:RARITY.LEGENDARY,
@@ -51,7 +52,14 @@ const chef = {
          effect:t=>{t.range=9999; t.pierce=999; t.absoluteAwareness=true; t.omniscience=true; t.totalKnowledge=true;}}
       ]
     }
-  ]
+  ],
+  draw(ctx){
+    ctx.fillStyle="#9932cc"; roundedRect(ctx,-16,-14,32,28,6);
+    ctx.fillStyle="#dda0dd"; roundedRect(ctx,-14,-12,28,10,4);
+    // AI indicator
+    ctx.fillStyle="#00ff00"; ctx.beginPath(); ctx.arc(8,0,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#0066ff"; ctx.beginPath(); ctx.arc(-8,0,3,0,Math.PI*2); ctx.fill();
+  }
 };
 
 export default chef;
