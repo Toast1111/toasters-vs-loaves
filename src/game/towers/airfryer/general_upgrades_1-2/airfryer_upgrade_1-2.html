@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Air Fryer – Basic (SVG)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin:0; height:100%; background:#0f1220; display:grid; place-items:center; }
+  svg { width:min(92vw, 520px); height:auto; display:block; border-radius:12px;
+        background:radial-gradient(600px 400px at 50% 25%, #14192b 0%, #101426 60%, #0e1222 100%); }
+</style>
+</head>
+<body>
+
+<!-- ======================= BASIC AIR FRYER SVG ======================== -->
+<svg viewBox="-150 -180 300 360" role="img" aria-label="Basic air fryer">
+  <style>
+    /* Theme knobs */
+    :root{
+      --shell:#2b2f3c;   /* main body */
+      --plate:#343a4e;   /* top plate */
+      --panel:#b8aed4;   /* simple control strip */
+      --knob-face:#ececf5;
+      --knob-slot:#8d93a6;
+      --led:#6a5aed;     /* small status LED */
+      --feet:#0c101c;
+      --stroke:#1e2335;  /* subtle outline */
+      --highlight:rgba(255,255,255,.18);
+    }
+    .shell   { fill: var(--shell); }
+    .plate   { fill: var(--plate); }
+    .panel   { fill: var(--panel); }
+    .feet    { fill: var(--feet); }
+    .line    { stroke: var(--stroke); stroke-width:1.5; fill:none; }
+    .sideHi  { fill: var(--highlight); }
+  </style>
+
+  <!-- Body -->
+  <g id="body">
+    <rect x="-120" y="-150" width="240" height="260" rx="26" class="shell"/>
+    <rect x="-118" y="-148" width="236" height="256" rx="24" class="line"/>
+    <!-- subtle side highlights -->
+    <rect x="-110" y="-138" width="10" height="236" rx="8" class="sideHi"/>
+    <rect x="100"  y="-138" width="10" height="236" rx="8" class="sideHi"/>
+  </g>
+
+  <!-- Top plate + vents (very simple) -->
+  <g id="topPlate">
+    <rect x="-100" y="-128" width="200" height="50" rx="14" class="plate"/>
+    <g fill="#121726" transform="translate(0,-108)">
+      <rect x="-78" y="0" width="14" height="6" rx="3"/>
+      <rect x="-58" y="0" width="14" height="6" rx="3"/>
+      <rect x="-38" y="0" width="14" height="6" rx="3"/>
+      <rect x="-18" y="0" width="14" height="6" rx="3"/>
+      <rect x="2"   y="0" width="14" height="6" rx="3"/>
+      <rect x="22"  y="0" width="14" height="6" rx="3"/>
+      <rect x="42"  y="0" width="14" height="6" rx="3"/>
+      <rect x="62"  y="0" width="14" height="6" rx="3"/>
+    </g>
+  </g>
+
+  <!-- Simple control strip -->
+  <g id="panel">
+    <rect x="-96" y="-66" width="192" height="44" rx="12" class="panel"/>
+    <!-- LED + single knob -->
+    <circle id="led" cx="-70" cy="-44" r="4.5" fill="var(--led)"/>
+    <g id="knob">
+      <rect x="52" y="-58" width="30" height="30" rx="15" fill="var(--knob-face)"/>
+      <rect x="65" y="-50" width="6" height="14" rx="3" fill="var(--knob-slot)"/>
+    </g>
+  </g>
+
+  <!-- Door/face (flat plate, no window) -->
+  <g id="door">
+    <rect x="-110" y="-10" width="220" height="116" rx="16" fill="#30354b"/>
+  </g>
+
+  <!-- Handle + feet -->
+  <g id="hardware">
+    <rect id="handle" x="-34" y="92" width="68" height="26" rx="9" fill="#cfc7e6"/>
+    <rect x="-92" y="96" width="36" height="10" rx="5" class="feet"/>
+    <rect x="56"  y="96" width="36" height="10" rx="5" class="feet"/>
+  </g>
+</svg>
+<!-- ==================================================================== -->
+
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Modular Air Fryer SVG (steam + basket)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin:0; height:100%; background:#0f1220; display:grid; place-items:center; }
+  .card { padding:14px 14px 10px; border-radius:16px; background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); }
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; font:500 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:#c9cee8; margin-top:8px; opacity:.9; }
+  .controls label { display:inline-flex; gap:6px; align-items:center; padding:6px 8px; background:#12162a; border-radius:8px; }
+  svg { width:min(92vw, 600px); height:auto; display:block; border-radius:12px; background:radial-gradient(600px 400px at 50% 25%, #14192b 0%, #101426 60%, #0e1222 100%); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <!-- ====================== MODULAR AIR FRYER SVG ======================= -->
+    <svg id="airFryer"
+         viewBox="-160 -180 320 360"
+         role="img"
+         aria-label="Air fryer with modular steam and basket states"
+         data-steam="off"          <!-- on | off -->
+         data-basket="closed"      <!-- open | closed -->
+         data-ring="on">           <!-- on | off -->
+      <style>
+        /* ---------- Theme & timing knobs (edit these) ---------- */
+        :root{
+          --shell:#2b2f3c;  --panel:#b9acd2; --glass:#141a2b; --rim:#3a3550;
+          --accent:#6a5aed; --detail:#0b0f18; --handle:#cfc7e6; --stroke:#1e2335;
+          --steam:#bfc6ff;  --steam-alpha:.7;
+          --hinge-time:.45s; --steam-time:2.2s; --ring-time:6s;
+        }
+        .shell   { fill: var(--shell); }
+        .panel   { fill: var(--panel); }
+        .rim     { fill: var(--rim); }
+        .glass   { fill: var(--glass); }
+        .accentS { stroke: var(--accent); }
+        .detail  { fill: var(--detail); }
+        .handle  { fill: var(--handle); }
+        .sides   { fill: #ffffff; opacity: .18; }
+        .mute    { fill: #121726; }
+        .line    { stroke: var(--stroke); stroke-width:1.5; fill:none; }
+
+        /* ---------- Basket open/closed (hinge from bottom edge) ---------- */
+        #basket { transform-box: fill-box; transform-origin: 0% 100%; transition: transform var(--hinge-time) ease; }
+        svg[data-basket="closed"] #basket { transform: rotate(0deg); }
+        svg[data-basket="open"]   #basket { transform: rotate(18deg) translate(0,-4px); }
+
+        /* ---------- Ring spin toggle ---------- */
+        #ring > circle.spin { animation: ringSpin var(--ring-time) linear infinite; }
+        @keyframes ringSpin { to { transform: rotate(360deg); } }
+        svg[data-ring="off"] #ring > circle.spin { animation: none; }
+
+        /* ---------- Steam module ---------- */
+        #steam { display: none; }
+        svg[data-steam="on"] #steam { display: block; }
+        .wisp { fill: var(--steam); opacity: var(--steam-alpha); }
+        /* CSS fallback animate (for browsers where SMIL is limited) */
+        @keyframes rise {
+          0%   { transform: translateY(0) scale(1); opacity: 0; }
+          10%  { opacity: var(--steam-alpha); }
+          100% { transform: translateY(-60px) scale(1.1); opacity: 0; }
+        }
+        .w1 { animation: rise var(--steam-time) linear infinite; }
+        .w2 { animation: rise calc(var(--steam-time) * 1.1) linear infinite .3s; }
+        .w3 { animation: rise calc(var(--steam-time) * 1.2) linear infinite .6s; }
+      </style>
+
+      <!-- BODY -->
+      <g id="body">
+        <rect x="-120" y="-150" width="240" height="260" rx="24" class="shell"/>
+        <rect x="-118" y="-148" width="236" height="256" rx="22" class="line"/>
+        <rect x="-112" y="-140" width="10" height="240" rx="8" class="sides"/>
+        <rect x="102"  y="-140" width="10" height="240" rx="8" class="sides"/>
+      </g>
+
+      <!-- TOP PLATE + VENTS -->
+      <g id="topPlate">
+        <rect x="-102" y="-132" width="204" height="56" rx="14" fill="#343a4e"/>
+        <g id="vents" class="mute">
+          <rect x="-106" y="-110" width="18" height="6" rx="3"/>
+          <rect x="-84"  y="-110" width="18" height="6" rx="3"/>
+          <rect x="-62"  y="-110" width="18" height="6" rx="3"/>
+          <rect x="-40"  y="-110" width="18" height="6" rx="3"/>
+          <rect x="-18"  y="-110" width="18" height="6" rx="3"/>
+          <rect x="4"    y="-110" width="18" height="6" rx="3"/>
+          <rect x="26"   y="-110" width="18" height="6" rx="3"/>
+          <rect x="48"   y="-110" width="18" height="6" rx="3"/>
+          <rect x="70"   y="-110" width="18" height="6" rx="3"/>
+        </g>
+      </g>
+
+      <!-- CONTROL PANEL -->
+      <g id="panelGroup">
+        <rect x="-108" y="-66" width="216" height="50" rx="12" class="panel"/>
+        <rect x="-36" y="-56" width="72" height="26" rx="6" class="detail"/>
+        <g fill="#ececf5">
+          <rect x="-96" y="-58" width="30" height="30" rx="15"/>
+          <rect x="66"  y="-58" width="30" height="30" rx="15"/>
+        </g>
+        <g fill="#8d93a6">
+          <rect x="-82" y="-50" width="6" height="14" rx="3"/>
+          <rect x="80"  y="-50" width="6" height="14" rx="3"/>
+        </g>
+      </g>
+
+      <!-- WINDOW FRAME -->
+      <g id="window">
+        <rect x="-110" y="-2" width="220" height="110" rx="16" class="rim"/>
+      </g>
+
+      <!-- BASKET (hinges at bottom of window) -->
+      <g id="basket" transform="rotate(0)">
+        <!-- content sits inside the frame opening -->
+        <rect x="-98"  y="10" width="196" height="86"  rx="10" class="glass"/>
+        <!-- circulation ring -->
+        <g id="ring" transform="translate(0,53)">
+          <circle r="38" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="10 8" class="spin"/>
+        </g>
+        <!-- handle (click target) -->
+        <rect id="handle" x="-34" y="92" width="68" height="26" rx="9" class="handle"/>
+      </g>
+
+      <!-- FEET -->
+      <g id="feet">
+        <rect x="-92" y="96" width="36" height="10" rx="5" fill="#0c101c"/>
+        <rect x="56"  y="96" width="36" height="10" rx="5" fill="#0c101c"/>
+      </g>
+
+      <!-- STEAM MODULE (loops; toggled via data-steam) -->
+      <g id="steam" transform="translate(0,-130)">
+        <!-- three wisps, different phases -->
+        <path class="wisp w1" d="M-60,0 q8,-10 0,-20 q-10,-12 0,-24" />
+        <path class="wisp w2" d="M0,0   q8,-10 0,-20 q-10,-12 0,-24" />
+        <path class="wisp w3" d="M60,0  q8,-10 0,-20 q-10,-12 0,-24" />
+        <!-- SMIL backup for browsers that support it -->
+        <g fill="none" stroke="none">
+          <animate xlink:href="#steam"
+                   attributeName="opacity" values="0;1;0" dur="var(--steam-time)"
+                   repeatCount="indefinite" />
+        </g>
+      </g>
+    </svg>
+    <!-- =================================================================== -->
+
+    <!-- Demo toggles (optional) -->
+    <div class="controls">
+      <label><input type="checkbox" id="toggleSteam"> Steam</label>
+      <label><input type="checkbox" id="toggleBasket"> Basket open</label>
+      <label><input type="checkbox" id="toggleRing" checked> Ring spin</label>
+      <span>Tip: click the handle to toggle the basket.</span>
+    </div>
+  </div>
+
+<script>
+  // Tiny helper that toggles data-attributes on the SVG root.
+  const svg = document.getElementById('airFryer');
+  const qs  = id => document.getElementById(id);
+
+  // wire demo controls
+  qs('toggleSteam').addEventListener('change', e => {
+    svg.dataset.steam = e.target.checked ? 'on' : 'off';
+  });
+  qs('toggleBasket').addEventListener('change', e => {
+    svg.dataset.basket = e.target.checked ? 'open' : 'closed';
+  });
+  qs('toggleRing').addEventListener('change', e => {
+    svg.dataset.ring = e.target.checked ? 'on' : 'off';
+  });
+
+  // Click the handle to toggle basket
+  svg.getElementById('handle').addEventListener('click', () => {
+    svg.dataset.basket = (svg.dataset.basket === 'open') ? 'closed' : 'open';
+    qs('toggleBasket').checked = (svg.dataset.basket === 'open');
+  });
+</script>
+</body>
+</html>

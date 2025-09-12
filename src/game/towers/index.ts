@@ -6,7 +6,7 @@ import basic from './basic';
 import wide from './wide';
 import oven from './oven';
 import microwave from './microwave';
-import airfryer from './airfryer';
+import airfryer from './airfryer/airfryer';
 import convection from './convection';
 import industrial from './industrial';
 import chef from './chef';
