@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { isPath, waypoints, grid } from "./map";
+import { isPath, waypoints, grid, isBuildable } from "./map";
 import { breads } from "./breads";
 import { projectiles } from "./projectiles";
 import { particles, damageNumbers } from "./particles";
@@ -8,7 +8,7 @@ import { powerups, activePowerups, POWERUP_TYPES } from "./powerups";
 import { getTowerBase } from "./towers/index";
 import { roundedRect } from "./drawUtils";
 
-export function drawScene(ctx, state){
+export function drawScene(ctx, state, game){
   const W=state.w, H=state.h;
   
   // Apply screen shake
@@ -288,6 +288,66 @@ export function drawScene(ctx, state){
     }
     
     ctx.restore();
+  }
+  
+  // Draw tower placement preview
+  if (state.placing && game && game.mouse) {
+    const mx = game.mouse.x;
+    const my = game.mouse.y;
+    const tower = state.placing;
+    
+    // Only draw if mouse is in valid area (not the -9999 "off screen" position)
+    if (mx > -1000 && my > -1000 && mx < state.w + 100 && my < state.h + 100) {
+      
+      // Check if placement location is valid (using same logic as tryPlaceTower)
+      const canPlace = isBuildable(mx, my) && 
+                       !state.toasters.some(t => Math.hypot(mx - t.x, my - t.y) < 36) &&
+                       state.coins >= tower.cost;
+      
+      ctx.save();
+      ctx.translate(mx, my);
+      
+      // Draw tower preview with better visibility
+      ctx.globalAlpha = 0.8;
+      
+      if (canPlace) {
+        ctx.fillStyle = '#4ade80'; // Green for valid placement
+        ctx.strokeStyle = '#22c55e';
+      } else {
+        ctx.fillStyle = '#ef4444'; // Red for invalid placement
+        ctx.strokeStyle = '#dc2626';
+      }
+      
+      ctx.lineWidth = 3;
+      
+      // Draw a more visible tower shape
+      roundedRect(ctx, -16, -14, 32, 28, 6);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Draw range indicator
+      if (state.showRanges && tower.base && tower.base.range) {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = canPlace ? '#4ade80' : '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, 0, tower.base.range * state.global.range, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.globalAlpha = 0.6;
+        ctx.strokeStyle = canPlace ? '#22c55e' : '#dc2626';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      
+      // Draw tower name/type indicator
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = canPlace ? '#000' : '#fff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(tower.name.charAt(0).toUpperCase(), 0, 4);
+      
+      ctx.restore();
+    }
   }
   
   for(const f of state.texts){ const a=1-Math.min(1,f.t/1.2); ctx.globalAlpha=a; ctx.fillStyle=f.isBad?'#ff6b6b':'#ffd166'; ctx.font='12px ui-monospace,Consolas'; ctx.fillText(f.str,f.x,f.y-10-20*f.t); ctx.globalAlpha=1; f.t+=1/60; }

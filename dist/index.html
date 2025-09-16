@@ -9,25 +9,64 @@
       --bg:#0f0f14;--panel:#16161d;--panel2:#1d1d27;--text:#e7e7ee;--accent:#ffb347;--accent2:#ffd166;--good:#7bd88f;--bad:#ff6b6b;--muted:#a1a1b3;--wire:#34344a;
     }
     *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b10,#14141b);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    .wrap{display:grid;grid-template-columns:1fr 360px;gap:10px;height:100%;padding:10px}
-    #gamePanel{position:relative;border:1px solid #27273a;border-radius:14px;overflow:hidden;background:#0c0f15}
-    canvas{display:block;background:#0a0d12}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b10,#14141b);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;overflow:hidden}
+    .wrap{display:grid;grid-template-columns:1fr min(300px, 25vw);gap:10px;height:100vh;padding:10px;min-height:0}
+    #gamePanel{position:relative;border:1px solid #27273a;border-radius:14px;overflow:hidden;background:#0c0f15;min-width:0;min-height:0}
+    canvas{display:block;background:#0a0d12;width:100%;height:100%}
     .hud{position:absolute;inset:0;pointer-events:none}
-    .topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:10px;pointer-events:auto}
-    .pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.08);display:flex;gap:12px;align-items:center}
+    .topbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:10px;pointer-events:auto;flex-wrap:wrap;align-items:flex-start}
+    .pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.06);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.08);display:flex;gap:12px;align-items:center;white-space:nowrap}
     .pill b{color:var(--accent)}
     .btn{cursor:pointer;user-select:none}
     .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#222;font-weight:700;border:none}
     .btn.small{font-size:12px;padding:6px 10px}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    .side{background:var(--panel);border:1px solid #29293f;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+    .side{background:var(--panel);border:1px solid #29293f;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;overflow:auto;min-width:0}
+    
+    /* Responsive breakpoints */
+    @media (max-width: 1200px) {
+      .wrap{grid-template-columns:1fr min(280px, 28vw)}
+      .pill{font-size:13px;padding:6px 10px;gap:8px}
+      .topbar{gap:8px}
+    }
+    
+    @media (max-width: 1024px) {
+      .wrap{grid-template-columns:1fr min(260px, 30vw)}
+      .pill{font-size:12px;padding:6px 8px;gap:6px}
+      .topbar{gap:6px}
+    }
+    
+    @media (max-width: 768px) {
+      .wrap{grid-template-columns:1fr;grid-template-rows:1fr auto;gap:8px;padding:8px}
+      .side{max-height:35vh;order:2}
+      #gamePanel{order:1}
+      .topbar{position:relative;left:0;right:0;top:0;margin-bottom:10px}
+      .pill{font-size:11px;padding:4px 6px;gap:4px}
+    }
+    
+    @media (max-width: 580px) {
+      .catalog{grid-template-columns:1fr}
+    }
+    
+    @media (max-width: 480px) {
+      .catalog{grid-template-columns:1fr}
+      .tech-grid{grid-template-columns:repeat(2,1fr)}
+      .pill{font-size:10px;padding:3px 5px;gap:3px}
+      .pill span{display:none}
+      .pill b{margin:0}
+      .topbar{gap:4px}
+    }
+    
+    /* Sell button and range toggle styling */
+    .sell-btn{background:linear-gradient(135deg,var(--bad),#ff5555);color:white;font-weight:600;padding:8px 16px;border:none;border-radius:8px;transition:all 0.2s ease}
+    .sell-btn:disabled{background:#2d3748;color:var(--muted);cursor:not-allowed}
+    .sell-btn:hover:not(:disabled){background:linear-gradient(135deg,#ff5555,var(--bad));transform:translateY(-1px)}
+    .range-toggle{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer}
+    .range-toggle input{margin:0}
+    
     .section{background:var(--panel2);border:1px solid #2d2d45;border-radius:12px;padding:10px}
     h2,h3{margin:0 0 8px 0;font-weight:800}
-    .catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    .card{background:#12121a;border:1px solid #2b2b40;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
-    .placeBtn{padding:8px;border-radius:8px;border:1px dashed #3a3a56;background:#0e0e15;cursor:pointer}
-    .placeBtn:hover{background:#131321}
+    .catalog{display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:visible}
     .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
     .small{color:var(--muted);font-size:12px}
     .tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
@@ -69,17 +108,67 @@
     .upgrade-info{display:flex;flex-direction:column;gap:4px}
     .upgrade-name{font-weight:bold;font-size:12px;color:var(--text)}
     .upgrade-tip{font-size:11px;color:var(--muted)}
-    .upgrade-btn{padding:6px 10px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;font-weight:600;font-size:11px}
-    .upgrade-btn:disabled{background:#2d3748;color:var(--muted)}
     .maxed{font-size:11px;color:var(--good);font-weight:bold}
     .blocked{font-size:11px;color:var(--bad)}
+    
+    /* Tower Upgrade Popup Styles */
+    .tower-popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.3);backdrop-filter:blur(2px);display:flex;align-items:flex-start;justify-content:flex-end;z-index:1000;animation:popupFadeIn 0.2s ease-out;padding:20px}
+    .popup-content{background:var(--panel);border:1px solid #29293f;border-radius:16px;width:400px;max-width:400px;max-height:calc(100vh - 40px);overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.5);animation:popupSlideInRight 0.3s ease-out}
+    .popup-header{background:var(--panel2);padding:16px 20px;border-bottom:1px solid #29293f;display:flex;justify-content:space-between;align-items:center}
+    .popup-header h2{margin:0;color:var(--accent);font-size:18px}
+    .popup-close{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.2s}
+    .popup-close:hover{background:var(--bad);color:white;transform:scale(1.1)}
+    .popup-body{padding:20px;overflow-y:auto;max-height:calc(80vh - 80px)}
+    .popup-actions{margin-top:20px;padding-top:16px;border-top:1px solid #29293f;display:flex;justify-content:center}
+    .popup-actions .sell-btn{background:linear-gradient(135deg,var(--bad),#ff5555);color:white;font-weight:600;padding:10px 20px;border:none;border-radius:8px;font-size:14px;transition:all 0.2s}
+    .popup-actions .sell-btn:hover{background:linear-gradient(135deg,#ff5555,var(--bad));transform:translateY(-1px);box-shadow:0 4px 12px rgba(255,107,107,0.3)}
+    .popup-tower-stats{background:#101420;border:1px solid #2b2e46;border-radius:8px;padding:12px;margin-bottom:16px}
+    .popup-tower-stats .stat-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px}
+    .popup-tower-stats .stat-label{color:var(--muted)}
+    .popup-tower-stats .stat-value{color:var(--text);font-weight:600}
+    
+    @keyframes popupFadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes popupSlideInRight{from{opacity:0;transform:translateX(100%)}to{opacity:1;transform:translateX(0)}}
+    
+    /* Enhanced card animations */
+    .card{background:#12121a;border:1px solid #2b2b40;border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:4px;transition:all 0.2s ease;min-width:0;word-wrap:break-word}
+    .card:hover{border-color:#3a3a56;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+    .card.selected{border-color:var(--accent);background:#1a1520;box-shadow:0 0 0 2px rgba(255,179,71,0.3)}
+    .card.insufficient-funds{opacity:0.6;cursor:not-allowed}
+    .card.insufficient-funds:hover{transform:none;box-shadow:none}
+    
+    .placeBtn{padding:6px;border-radius:8px;border:1px dashed #3a3a56;background:#0e0e15;cursor:pointer;font-size:12px;transition:all 0.2s ease}
+    .placeBtn:hover{background:#131321;border-color:var(--accent);color:var(--accent)}
+    .placeBtn:active{transform:scale(0.98)}
+    .placeBtn.selected{background:var(--accent);color:#000;border-color:var(--accent);border-style:solid}
+    .placeBtn.selected:hover{background:var(--accent2)}
+    .placeBtn:disabled{opacity:0.5;cursor:not-allowed;background:#0e0e15;color:var(--muted)}
+    .placeBtn:disabled:hover{background:#0e0e15;border-color:#3a3a56;color:var(--muted);transform:none}
+    
+    .badge.insufficient{color:var(--bad)}
+    
+    
+    /* Upgrade button enhancements */
+    .upgrade-btn{padding:6px 10px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;font-weight:600;font-size:11px;transition:all 0.2s ease;cursor:pointer}
+    .upgrade-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(255,179,71,0.4)}
+    .upgrade-btn:active{transform:scale(0.98)}
+    .upgrade-btn:disabled{background:#2d3748;color:var(--muted);transform:none;box-shadow:none}
+    
+    /* Tier bubble animations */
+    .tier-bubble{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;cursor:pointer;transition:all 0.2s ease}
+    .tier-bubble:hover{transform:scale(1.1)}
+    .tier-owned{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000}
+    .tier-next{background:#2d3748;color:var(--text);border:2px solid var(--accent);animation:tierPulse 2s infinite}
+    .tier-locked{background:#16161d;color:var(--muted);border:1px solid #2b2e46}
+    
+    @keyframes tierPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,179,71,0.4)}50%{box-shadow:0 0 0 4px rgba(255,179,71,0)}}
   </style>
-  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-PZBW7dUx.js"></script>
+  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-DINL4lGT.js"></script>
 </head>
 <body>
   <div class="wrap">
     <div id="gamePanel">
-      <canvas id="game" width="960" height="540"></canvas>
+      <canvas id="game"></canvas>
       <div class="hud">
         <div class="topbar">
           <div class="pill"><span>Coins: <b id="coins">0</b></span><span>Lives: <b id="lives">100</b></span><span>Wave: <b id="wave">0</b></span><span>AP (Appliance Pts): <b id="ap">0</b></span></div>
@@ -89,38 +178,63 @@
         </div>
       </div>
     </div>
+    
+    <!-- Tower Upgrade Popup -->
+    <div id="towerUpgradePopup" class="tower-popup" style="display: none;">
+      <div class="popup-content">
+        <div class="popup-header">
+          <h2 id="popupTowerName">Selected Tower</h2>
+          <button class="popup-close" id="closePopup">×</button>
+        </div>
+        <div class="popup-body">
+          <div id="popupTowerStats"></div>
+          <div id="popupUpgradePaths"></div>
+          <div class="popup-actions">
+            <button id="popupSellBtn" class="btn sell-btn">Sell Tower</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <aside class="side">
       <div class="section">
-        <h2>Toaster Catalog</h2>
+        <h2>Tower Catalog</h2>
         <div class="catalog" id="catalog"></div>
-        <div class="hint">Select a toaster then click the counter to place.<br/>Hold <b>Shift</b> to place multiple.</div>
+        <div class="hint">Click a tower to select, then click counter to place. Hold <b>Shift</b> for multiple placements.</div>
       </div>
-      <div class="section" id="inspectSection" style="display:none">
-        <h2>Selected Toaster</h2>
-        <div id="inspect"></div>
-      </div>
+      
+      <!-- Tech Tree moved down -->
       <div class="section">
         <h2>Kitchen Tech Tree</h2>
         <div class="tech-grid" id="tech"></div>
         <div class="hint">AP is earned each wave. Global upgrades buff all appliances.</div>
       </div>
+      
+      <!-- Abilities moved down -->
       <div class="section">
         <h3>Special Abilities</h3>
         <div id="abilitiesDisplay">
           <div class="hint">Hotkeys: Q, W, E, R. Abilities cost coins except Emergency Coins.</div>
         </div>
       </div>
+      
+      <!-- Controls section -->
       <div class="section">
         <h3>Controls</h3>
-        <div class="row"><span>Sell selected toaster</span><button id="sellBtn" class="btn small">Sell (80%)</button></div>
-        <div class="row"><span>Toggle range preview</span><input type="checkbox" id="rangeToggle" checked></div>
+        <div class="row"><span>Show Ranges</span><input type="checkbox" id="rangeToggle" checked></div>
+        <button id="sellBtn" class="btn small sell-btn" disabled>Sell Tower (No Selection)</button>
+        <div class="hint">Select a placed tower to upgrade or sell it</div>
       </div>
+      
+      <!-- Achievements moved down -->
       <div class="section">
         <h3>Achievements</h3>
         <div id="achievementsDisplay">
           <div class="hint">Complete challenges to unlock achievements!</div>
         </div>
       </div>
+      
+      <!-- Event Log moved down -->
       <div class="section">
         <h3>Event Log</h3>
         <div class="log" id="log"></div>

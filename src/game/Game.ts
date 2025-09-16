@@ -15,14 +15,27 @@ import { UI } from "./ui";
 
 export class Game{
   canvas; ctx; state; mouse={x:-999,y:-999}; last=performance.now();
-  constructor(canvas, ctx){ this.canvas=canvas; this.ctx=ctx; this.state=createInitialState(canvas.width, canvas.height); }
+  constructor(canvas, ctx){ 
+    this.canvas=canvas; 
+    this.ctx=ctx; 
+    // Use default dimensions initially, will be updated in main.ts
+    this.state=createInitialState(800, 600); 
+  }
   init(){
     UI.bind(this);
     loadStats(); // Load saved achievements and stats
-    this.canvas.addEventListener('mousemove',e=>{ this.mouse.x=e.offsetX; this.mouse.y=e.offsetY; });
+    
+    // Mouse event handlers with proper coordinate scaling
+    this.canvas.addEventListener('mousemove',e=>{ 
+      const rect = this.canvas.getBoundingClientRect();
+      this.mouse.x = (e.clientX - rect.left) * (this.state.w / rect.width);
+      this.mouse.y = (e.clientY - rect.top) * (this.state.h / rect.height);
+    });
     this.canvas.addEventListener('mouseleave',()=>{ this.mouse.x=this.mouse.y=-9999; });
     this.canvas.addEventListener('click', e=>{
-      const x=e.offsetX, y=e.offsetY;
+      const rect = this.canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (this.state.w / rect.width);
+      const y = (e.clientY - rect.top) * (this.state.h / rect.height);
       
       // Try to collect powerup first
       if (tryCollectPowerup(x, y, this.state)) {
@@ -30,8 +43,27 @@ export class Game{
       }
       
   const hit=this.state.toasters.findLast(t=>Math.hypot(x-t.x,y-t.y)<=18);
-  if(hit){ this.state.selected=hit.id; UI.updateInspect(this); return; }
-      if(this.state.placing){ this.tryPlaceTower(x,y, e.shiftKey); }
+  if(hit){ 
+    this.state.selected=hit.id; 
+    UI.updateInspect(this); 
+    UI.showTowerPopup(hit);
+    return; 
+  }
+      if(this.state.placing){ 
+        this.tryPlaceTower(x,y, e.shiftKey); 
+      } else {
+        // Clicked empty space - deselect tower and close popup
+        if (this.state.selected) {
+          this.state.selected = null;
+          UI.updateInspect(this);
+          UI.hideTowerPopup();
+        }
+        // Also clear any tower placement selection
+        if (this.state.placing) {
+          this.state.placing = null;
+          UI.refreshCatalog(this);
+        }
+      }
     });
     
     // Add keyboard controls for special abilities
@@ -80,7 +112,7 @@ export class Game{
     const value= Math.floor(0.8 * this.getTowerCost(t));
   this.state.coins+=value; UI.sync(this);
     this.state.toasters=this.state.toasters.filter(x=>x.id!==t.id);
-  this.state.selected=null; UI.updateInspect(this); UI.refreshCatalog(this);
+  this.state.selected=null; UI.updateInspect(this); UI.refreshCatalog(this); UI.hideTowerPopup();
   UI.float(this,t.x,t.y,`+${value}c (sold)`);
   }
   getTowerCost(t){ 

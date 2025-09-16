@@ -2,6 +2,7 @@
 import { GameInfoUI } from './gameInfo';
 import { TowerCatalogUI } from './towerCatalog';
 import { TowerInspectUI } from './towerInspect';
+import { TowerPopupUI } from './towerPopup';
 import { TechTreeUI } from './techTree';
 import { AbilitiesUI } from './abilities';
 import { AchievementsUI } from './achievements';
@@ -17,6 +18,7 @@ export const UI = {
   gameInfo: GameInfoUI,
   towerCatalog: TowerCatalogUI,
   towerInspect: TowerInspectUI,
+  towerPopup: TowerPopupUI,
   techTree: TechTreeUI,
   abilities: AbilitiesUI,
   achievements: AchievementsUI,
@@ -33,6 +35,7 @@ export const UI = {
     document.getElementById('rangeToggle')!.onchange = (e: any) => { 
       game.state.showRanges = e.target.checked; 
     };
+    
     document.getElementById('startBtn')!.onclick = () => { 
       if(game.state.betweenWaves) game.startWave(); 
     };
@@ -41,6 +44,7 @@ export const UI = {
     this.gameInfo.init(game);
     this.towerCatalog.init(game);
     this.towerInspect.init(game);
+    this.towerPopup.init(game);
     this.techTree.init(game);
     this.abilities.init(game);
     this.achievements.init(game);
@@ -67,6 +71,25 @@ export const UI = {
     this.gameInfo.sync(game);
     this.powerups.sync(game);
     this.towerInspect.sync(game);
+    this.updateSellButton(game);
+  },
+
+  /**
+   * Update the sell button state
+   */
+  updateSellButton(game: any) {
+    const sellBtn = document.getElementById('sellBtn');
+    if (sellBtn) {
+      const selected = game.getSelected();
+      if (selected) {
+        const sellValue = Math.floor(selected.totalCost * 0.8);
+        sellBtn.textContent = `Sell for ${sellValue}c`;
+        sellBtn.disabled = false;
+      } else {
+        sellBtn.textContent = 'Sell Tower (No Selection)';
+        sellBtn.disabled = true;
+      }
+    }
   },
 
   /**
@@ -118,5 +141,26 @@ export const UI = {
 
   updatePowerupDisplay() {
     this.powerups.updatePowerupDisplay();
+  },
+
+  /**
+   * Show the tower upgrade popup
+   */
+  showTowerPopup(tower: any) {
+    this.towerPopup.show(tower);
+  },
+
+  /**
+   * Hide the tower upgrade popup
+   */
+  hideTowerPopup() {
+    this.towerPopup.hide();
+  },
+
+  /**
+   * Check if the tower popup is open
+   */
+  isTowerPopupOpen(): boolean {
+    return this.towerPopup.isOpen();
   }
 };
