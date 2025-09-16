@@ -15,27 +15,14 @@ import { UI } from "./ui";
 
 export class Game{
   canvas; ctx; state; mouse={x:-999,y:-999}; last=performance.now();
-  constructor(canvas, ctx){ 
-    this.canvas=canvas; 
-    this.ctx=ctx; 
-    // Use default dimensions initially, will be updated in main.ts
-    this.state=createInitialState(800, 600); 
-  }
+  constructor(canvas, ctx){ this.canvas=canvas; this.ctx=ctx; this.state=createInitialState(canvas.width, canvas.height); }
   init(){
     UI.bind(this);
     loadStats(); // Load saved achievements and stats
-    
-    // Mouse event handlers with proper coordinate scaling
-    this.canvas.addEventListener('mousemove',e=>{ 
-      const rect = this.canvas.getBoundingClientRect();
-      this.mouse.x = (e.clientX - rect.left) * (this.state.w / rect.width);
-      this.mouse.y = (e.clientY - rect.top) * (this.state.h / rect.height);
-    });
+    this.canvas.addEventListener('mousemove',e=>{ this.mouse.x=e.offsetX; this.mouse.y=e.offsetY; });
     this.canvas.addEventListener('mouseleave',()=>{ this.mouse.x=this.mouse.y=-9999; });
     this.canvas.addEventListener('click', e=>{
-      const rect = this.canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * (this.state.w / rect.width);
-      const y = (e.clientY - rect.top) * (this.state.h / rect.height);
+      const x=e.offsetX, y=e.offsetY;
       
       // Try to collect powerup first
       if (tryCollectPowerup(x, y, this.state)) {
@@ -174,7 +161,6 @@ export class Game{
     this.state.waveQueue=buildWave(this.state.wave);
     this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
   }
-  
   update(dt){
     // spawn
     if(this.state.waveInProgress){
@@ -184,8 +170,6 @@ export class Game{
   this.state.waveInProgress=false; this.state.betweenWaves=true;
   this.state.ap+=1; this.state.coins+=50+this.state.wave*10; UI.sync(this);
   UI.log(`Wave ${this.state.wave} cleared! +AP, +coins`);
-        // Start 3-second countdown for next wave
-        this.state.autoWaveTimer = 3;
         recordWaveCompleted(); // Record for achievements
       }
     }
@@ -330,14 +314,6 @@ export class Game{
     stepPowerups(dt, this.state);
     stepAbilities(dt);
     stepStats(dt); // Track playtime and other stats
-    
-    // Simple auto-wave progression - start next wave after 3 seconds
-    if (this.state.betweenWaves && this.state.autoWaveTimer > 0) {
-      this.state.autoWaveTimer -= dt;
-      if (this.state.autoWaveTimer <= 0) {
-        this.startWave();
-      }
-    }
   }
-  draw(){ drawScene(this.ctx, this.state, this); }
+  draw(){ drawScene(this.ctx, this.state); }
 }

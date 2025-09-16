@@ -67,6 +67,7 @@ export const UI = {
     this.gameInfo.sync(game);
     this.powerups.sync(game);
     this.towerInspect.sync(game);
+    this.towerCatalog.refresh(game); // Update tower purchase buttons based on current coins
     this.updateSellButton(game);
   },
 
