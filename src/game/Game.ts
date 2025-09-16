@@ -71,6 +71,8 @@ export class Game{
   if(this.state.coins<type.cost){ UI.float(this,x,y,'Not enough coins',true); return; }
   for(const t of this.state.toasters){ if(Math.hypot(x-t.x,y-t.y)<36){ UI.float(this,x,y,'Too close to another toaster',true); return; } }
     const inst=this.makeToaster(type,x,y);
+    // Calculate initial projectile stats
+    this.updateTowerProjectileStats(inst);
     this.state.toasters.push(inst);
   this.state.coins-=type.cost; UI.sync(this);
   UI.log(`Placed ${type.name} for ${type.cost}c.`);
@@ -119,6 +121,12 @@ export class Game{
     return base + spent; 
   }
   
+  // Calculate and cache projectile lifetime for a tower
+  updateTowerProjectileStats(tower) {
+    const speed = tower.projectileSpeed || 300; // Default speed if not set
+    tower._projectileLifetime = tower.range / speed;
+  }
+  
   // New function to upgrade a specific path
   upgradeTowerPath(tower, pathIndex) {
     const baseTower = getTowerBase(tower.type);
@@ -147,6 +155,9 @@ export class Game{
     this.state.coins -= upgrade.cost;
     tower.upgradeTiers[pathIndex]++;
     upgrade.effect(tower);
+    
+    // Recalculate projectile lifetime after stats change
+    this.updateTowerProjectileStats(tower);
     
     UI.float(this, tower.x, tower.y, `${upgrade.name}!`);
     UI.sync(this);
