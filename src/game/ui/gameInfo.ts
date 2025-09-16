@@ -26,31 +26,19 @@ export const GameInfoUI = {
     if (waveEl) waveEl.textContent = game.state.wave.toString();
     if (apEl) apEl.textContent = game.state.ap.toString();
     
-    // Update wave status
+    // Update wave status - simple countdown display
     if (waveStatusEl) {
-      if (game.state.paused) {
-        waveStatusEl.textContent = 'PAUSED';
-        waveStatusEl.style.backgroundColor = 'var(--bad)';
-        waveStatusEl.style.cursor = 'default';
-      } else if (game.state.waveInProgress) {
+      if (game.state.waveInProgress) {
         waveStatusEl.textContent = `Wave ${game.state.wave} in progress...`;
         waveStatusEl.style.backgroundColor = 'var(--accent)';
-        waveStatusEl.style.cursor = 'default';
       } else if (game.state.betweenWaves) {
-        if (game.state.autoWave && game.state.autoWaveTimer > 0) {
+        if (game.state.autoWaveTimer > 0) {
           const timeLeft = Math.ceil(game.state.autoWaveTimer);
           waveStatusEl.textContent = `Next wave in ${timeLeft}s`;
           waveStatusEl.style.backgroundColor = 'var(--good)';
-          waveStatusEl.style.cursor = 'default';
         } else {
-          waveStatusEl.textContent = `Ready for Wave ${game.state.wave + 1} - Click to start`;
+          waveStatusEl.textContent = `Ready for Wave ${game.state.wave + 1}`;
           waveStatusEl.style.backgroundColor = 'var(--wire)';
-          waveStatusEl.style.cursor = 'pointer';
-          waveStatusEl.onclick = () => {
-            if (game.state.betweenWaves) {
-              game.startWave();
-            }
-          };
         }
       }
     }

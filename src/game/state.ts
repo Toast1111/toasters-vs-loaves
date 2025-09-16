@@ -6,8 +6,8 @@ export function createInitialState(w,h){
     placing:null, selected:null, showRanges:true, running:false,
     global:{damage:1, fireRate:1, range:1, bounty:1, pierce:0},
     waveQueue:[], spawnTimer:0, betweenWaves:true, waveInProgress:false, idSeq:1,
-    // Auto-wave system
-    autoWave: true, autoWaveDelay: 3.0, autoWaveTimer: 0, paused: false,
+    // Simple auto-wave timer
+    autoWaveTimer: 3,
     toasters:[], texts:[]
   };
 }

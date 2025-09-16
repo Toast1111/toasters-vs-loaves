@@ -175,18 +175,7 @@ export class Game{
     this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
   }
   
-  togglePause(){
-    this.state.paused = !this.state.paused;
-    this.state.running = !this.state.paused;
-    UI.sync(this);
-    UI.log(this.state.paused ? 'Game paused' : 'Game resumed');
-  }
   update(dt){
-    // Don't update game logic when paused, but still allow UI interactions
-    if (this.state.paused) {
-      return;
-    }
-    
     // spawn
     if(this.state.waveInProgress){
       this.state.spawnTimer-=dt;
@@ -195,8 +184,8 @@ export class Game{
   this.state.waveInProgress=false; this.state.betweenWaves=true;
   this.state.ap+=1; this.state.coins+=50+this.state.wave*10; UI.sync(this);
   UI.log(`Wave ${this.state.wave} cleared! +AP, +coins`);
-        // Start auto-wave timer for next wave
-        this.state.autoWaveTimer = this.state.autoWaveDelay;
+        // Start 3-second countdown for next wave
+        this.state.autoWaveTimer = 3;
         recordWaveCompleted(); // Record for achievements
       }
     }
@@ -342,12 +331,11 @@ export class Game{
     stepAbilities(dt);
     stepStats(dt); // Track playtime and other stats
     
-    // Auto-wave progression
-    if (!this.state.paused && this.state.autoWave && this.state.betweenWaves) {
+    // Simple auto-wave progression - start next wave after 3 seconds
+    if (this.state.betweenWaves && this.state.autoWaveTimer > 0) {
       this.state.autoWaveTimer -= dt;
       if (this.state.autoWaveTimer <= 0) {
         this.startWave();
-        this.state.autoWaveTimer = this.state.autoWaveDelay;
       }
     }
   }
