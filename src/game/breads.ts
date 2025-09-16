@@ -116,6 +116,7 @@ export function stepBreads(dt, state){
 }
 // Define splitting patterns for different bread types
 const SPLIT_PATTERNS = {
+  'bag_of_loaf': { into: 'whole_loaf', count: 6, sizeMultiplier: 0.7, statMultiplier: 0.5 },
   'whole_loaf': { into: 'half_loaf', count: 3, sizeMultiplier: 0.6, statMultiplier: 0.4 },
   'artisan_loaf': { into: 'slice', count: 4, sizeMultiplier: 0.5, statMultiplier: 0.35 },
   'half_loaf': { into: 'slice', count: 2, sizeMultiplier: 0.7, statMultiplier: 0.5 },

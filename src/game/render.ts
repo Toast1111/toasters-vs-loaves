@@ -80,6 +80,26 @@ export function drawScene(ctx, state, game){
       ctx.closePath(); ctx.fill();
       // Armor plating
       ctx.fillStyle="#696969"; roundedRect(ctx,-e.r*0.6,-e.r*0.6,e.r*1.2,e.r*1.2,3);
+    } else if (e.type === 'bag_of_loaf') {
+      // Bag of loaves - simple bag containing multiple loaves
+      ctx.fillStyle="#d4a574"; roundedRect(ctx,-e.r*1.1,-e.r*0.8,e.r*2.2,e.r*1.6,e.r*0.3);
+      ctx.fillStyle="#b8956a"; roundedRect(ctx,-e.r*1.0,-e.r*0.7,e.r*2.0,e.r*1.2,e.r*0.2);
+      
+      // Draw individual loaf shapes inside to show it contains multiple loaves
+      ctx.fillStyle="#8b7355"; 
+      for(let i = 0; i < 6; i++) {
+        const row = Math.floor(i / 3);
+        const col = i % 3;
+        const loafX = (-e.r*0.5) + (col * e.r*0.5);
+        const loafY = (-e.r*0.3) + (row * e.r*0.4);
+        ctx.fillRect(loafX-e.r*0.15, loafY-e.r*0.1, e.r*0.3, e.r*0.2);
+      }
+      
+      // Simple bag opening/seam
+      ctx.strokeStyle="#8b7355"; ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(-e.r*1.0, -e.r*0.7); ctx.lineTo(e.r*1.0, -e.r*0.7);
+      ctx.stroke();
     } else if (e.type === 'whole_loaf') {
       // Whole loaf - large rectangular bread
       ctx.fillStyle="#deb887"; roundedRect(ctx,-e.r*1.1,-e.r*0.7,e.r*2.2,e.r*1.4,e.r*0.3);

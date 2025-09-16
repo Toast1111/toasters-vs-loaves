@@ -49,6 +49,19 @@ export function buildWave(n){
     wave.push({type:'croissant', hp:300+25*n, speed:50+1*n, bounty:30, special:'regenerate'});
   }
   
+  // Add bag of loaves - late game splitter enemy (appears every 8 waves starting from wave 10)
+  if (n >= 10 && n % 8 === 0) {
+    const bagCount = 1 + Math.floor(n/16); // More frequent than before
+    for(let i=0; i<bagCount; i++) {
+      wave.push({
+        type:'bag_of_loaf', 
+        hp:300+25*n, // Reduced from 500+40*n
+        speed:45+0.8*n, // Slightly faster
+        bounty:80 // Reduced from 150
+      });
+    }
+  }
+  
   // Add charred bread - fire resistant but vulnerable to frost
   if (n >= 4 && n % 6 === 0) {
     const charredCount = 2 + Math.floor(n/5);
