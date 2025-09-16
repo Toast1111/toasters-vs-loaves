@@ -1,9 +1,8 @@
 // @ts-nocheck
-import { Game } from "./game/Game";
+import { MenuManager } from "./menus/MenuManager";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
-const ctx = canvas.getContext("2d")!;
-let game;
+let menuManager: MenuManager;
 
 // Function to resize canvas to fit its container
 function resizeCanvas() {
@@ -20,12 +19,13 @@ function resizeCanvas() {
   canvas.height = rect.height * dpr;
   
   // Scale the context for retina displays
+  const ctx = canvas.getContext("2d")!;
   ctx.scale(dpr, dpr);
   
-  // Update game state if game exists
-  if (game && game.state) {
-    game.state.w = rect.width;
-    game.state.h = rect.height;
+  // Update game state if game exists in MenuManager
+  if (menuManager && menuManager.gameInstance && menuManager.gameInstance.state) {
+    menuManager.gameInstance.state.w = rect.width;
+    menuManager.gameInstance.state.h = rect.height;
   }
 }
 
@@ -39,20 +39,10 @@ function handleResize() {
 // Initial resize
 resizeCanvas();
 
-game = new Game(canvas, ctx);
-// Set correct initial state dimensions after canvas is sized
-const rect = canvas.parentElement!.getBoundingClientRect();
-game.state.w = rect.width;
-game.state.h = rect.height;
-game.init();
+// Initialize the menu system instead of directly starting the game
+menuManager = new MenuManager(canvas);
 
 // Handle window resize with debouncing
 window.addEventListener('resize', handleResize);
 
-function frame(now:number){ 
-  const dt = game.stepTime(now); 
-  game.update(dt); 
-  game.draw(); 
-  requestAnimationFrame(frame); 
-}
-requestAnimationFrame(frame);
+
