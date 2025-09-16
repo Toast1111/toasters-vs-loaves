@@ -36,8 +36,27 @@ export const UI = {
       game.state.showRanges = e.target.checked; 
     };
     
-    document.getElementById('startBtn')!.onclick = () => { 
-      if(game.state.betweenWaves) game.startWave(); 
+    // Pause/Resume button
+    document.getElementById('pauseBtn')!.onclick = () => {
+      game.togglePause();
+      const btn = document.getElementById('pauseBtn')!;
+      btn.textContent = game.state.paused ? 'Resume' : 'Pause';
+    };
+    
+    // Auto-wave controls
+    document.getElementById('autoWaveToggle')!.onchange = (e: any) => {
+      game.state.autoWave = e.target.checked;
+      if (game.state.autoWave && game.state.betweenWaves) {
+        game.state.autoWaveTimer = game.state.autoWaveDelay;
+      }
+    };
+    
+    document.getElementById('autoWaveDelay')!.oninput = (e: any) => {
+      game.state.autoWaveDelay = parseFloat(e.target.value);
+      document.getElementById('autoWaveDelayValue')!.textContent = e.target.value + 's';
+      if (game.state.autoWave && game.state.betweenWaves) {
+        game.state.autoWaveTimer = game.state.autoWaveDelay;
+      }
     };
 
     // Initialize all components
