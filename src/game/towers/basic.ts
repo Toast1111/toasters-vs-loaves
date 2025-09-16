@@ -34,7 +34,7 @@ const basic = {
         {name:'Satellite Link', cost:420, tip:'+100 range, reveals all enemies', 
          effect:t=>{t.range+=100; t.globalDetection=true; t.slowChance=0.6;}},
         {name:'Orbital Strike', cost:800, tip:'Unlimited range, devastating slow', 
-         effect:t=>{t.range=9999; t.slowChance=0.9; t.slowAmount=0.7; t.orbital=true;}}
+         effect:t=>{t.unlimitedRange=true; t.slowChance=0.9; t.slowAmount=0.7; t.orbital=true;}}
       ]
     },
     { // Path 2: Rapid Fire - Speed focused

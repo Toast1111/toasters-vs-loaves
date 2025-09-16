@@ -124,7 +124,10 @@ export class Game{
   // Calculate and cache projectile lifetime for a tower
   updateTowerProjectileStats(tower) {
     const speed = tower.projectileSpeed || 300; // Default speed if not set
-    tower._projectileLifetime = tower.range / speed;
+    // Skip caching if tower has unlimited range upgrade
+    if (!tower.unlimitedRange) {
+      tower._projectileLifetime = tower.range / speed;
+    }
   }
   
   // New function to upgrade a specific path

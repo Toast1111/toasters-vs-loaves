@@ -13,7 +13,7 @@ export function fireFrom(t, target, customDamage = null){
     vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, 
     dmg:damage, pierce:(t.pierce||0), 
     splash:t.splash||0, splashDmg:t.splashDmg||0, 
-    life: t._projectileLifetime || (t.range / speed), // Use cached value or fallback
+    life: t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed)), // Override for special upgrades
     // New upgrade effects
     burnChance: t.burnChance || 0,
     burnDamage: t.burnDamage || 0,
