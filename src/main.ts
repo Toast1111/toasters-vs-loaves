@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { MenuManager } from "./menus/MenuManager";
+import { MenuManager } from "./ui/menus/MenuManager";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 let menuManager: MenuManager;
