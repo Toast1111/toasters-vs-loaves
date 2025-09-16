@@ -19,9 +19,12 @@ function returnToPool(projectile) {
 }
 
 export function fireFrom(t, target, customDamage = null){
+  // Safety check - if tower data is invalid, just return
+  if (!t || !target) return;
+  
   const angle=Math.atan2(target.y-t.y, target.x-t.x);
-  const speed=t.projectileSpeed;
-  const damage = customDamage || t.damage;
+  const speed=t.projectileSpeed || 300; // Add fallback
+  const damage = customDamage || t.damage || 1; // Add fallback
   
   // Get projectile from pool and initialize all properties
   const p = getPooledProjectile();
