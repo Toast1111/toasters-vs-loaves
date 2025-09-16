@@ -170,6 +170,8 @@ export class Game{
   this.state.waveInProgress=false; this.state.betweenWaves=true;
   this.state.ap+=1; this.state.coins+=50+this.state.wave*10; UI.sync(this);
   UI.log(`Wave ${this.state.wave} cleared! +AP, +coins`);
+        // Start 3-second countdown for next wave
+        this.state.autoWaveTimer = 3;
         recordWaveCompleted(); // Record for achievements
       }
     }
@@ -314,6 +316,14 @@ export class Game{
     stepPowerups(dt, this.state);
     stepAbilities(dt);
     stepStats(dt); // Track playtime and other stats
+    
+    // Simple auto-wave progression - start next wave after 3 seconds
+    if (this.state.betweenWaves && this.state.autoWaveTimer > 0) {
+      this.state.autoWaveTimer -= dt;
+      if (this.state.autoWaveTimer <= 0) {
+        this.startWave();
+      }
+    }
   }
-  draw(){ drawScene(this.ctx, this.state); }
+  draw(){ drawScene(this.ctx, this.state, this); }
 }

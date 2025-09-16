@@ -39,7 +39,7 @@ export const TowerCatalogUI = {
       card.id = `tower-card-${i}`;
       
       // Check if this tower is currently selected for placement
-      const isSelected = game.state.placing && game.state.placing.type === tower.type;
+      const isSelected = game.state.placing && game.state.placing.key === tower.key;
       const canAfford = game.state.coins >= tower.cost;
       
       // Add appropriate classes
@@ -80,7 +80,7 @@ export const TowerCatalogUI = {
     }
     
     // If already selected, deselect it
-    if (game.state.placing && game.state.placing.type === tower.type) {
+    if (game.state.placing && game.state.placing.key === tower.key) {
       game.state.placing = null;
       if (this.logCallback) {
         this.logCallback(`${tower.name} deselected.`);
