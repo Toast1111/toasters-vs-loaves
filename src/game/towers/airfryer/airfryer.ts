@@ -17,7 +17,7 @@ const airfryer = {
         {name:'Superheated Air', cost:400, tip:'+16 damage, higher crit chance', 
          effect:t=>{t.damage+=16; t.critChance=0.25; t.critMultiplier=2.5; t.superheated=true;}},
         {name:'Plasma Vortex', cost:680, tip:'+25 damage, crits cause explosions', 
-         effect:t=>{t.damage+=25; t.critChance=0.4; t.critMultiplier=3.0; t.critExplosions=true;}},
+         effect:t=>{t.damage+=25; t.critChance=0.4; t.critMultiplier=3.0; t.critExplosions=true; t.splashType='explosion';}},
         {name:'Miniature Sun', cost:1150, tip:'Extreme damage, constant crits, area effect', 
          effect:t=>{t.damage+=50; t.critChance=0.8; t.critMultiplier=4.0; t.solarFlares=true; t.constantHeat=true;}}
       ]

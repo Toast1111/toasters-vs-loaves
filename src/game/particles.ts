@@ -29,6 +29,28 @@ export function spawnExplosion(x, y, intensity = 10) {
   }
 }
 
+export function spawnPoisonCloud(x, y, radius = 40, duration = 3000) {
+  // Create poison cloud particles
+  const particleCount = Math.floor(radius / 5);
+  for(let i = 0; i < particleCount; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = Math.random() * radius;
+    const cloudX = x + Math.cos(angle) * distance;
+    const cloudY = y + Math.sin(angle) * distance;
+    
+    particles.push({
+      x: cloudX, 
+      y: cloudY,
+      vx: (Math.random() - 0.5) * 20, // Slow drift
+      vy: (Math.random() - 0.5) * 20,
+      g: 0, // No gravity for gas
+      life: duration / 1000, // Convert to seconds
+      type: 'poison',
+      color: `hsla(120, 60%, ${Math.random() * 20 + 30}%, 0.6)` // Green with transparency
+    });
+  }
+}
+
 export function spawnMuzzleFlash(x, y, angle) {
   for(let i = 0; i < 5; i++) {
     const spread = (Math.random() - 0.5) * 0.8;
@@ -46,13 +68,16 @@ export function spawnMuzzleFlash(x, y, angle) {
   }
 }
 
-export function spawnDamageNumber(x, y, damage, isCrit = false) {
+export function spawnDamageNumber(x, y, damage, isCrit = false, isResisted = false, isVulnerable = false, isHealing = false) {
   damageNumbers.push({
     x, y,
     damage: Math.round(damage),
     life: 1.5,
     vy: -60,
     isCrit,
+    isResisted,
+    isVulnerable,
+    isHealing,
     scale: isCrit ? 1.5 : 1
   });
 }

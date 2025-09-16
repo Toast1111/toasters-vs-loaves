@@ -15,11 +15,11 @@ const oven = {
         {name:'Molten Core', cost:200, tip:'+25 damage, +10 splash damage', 
          effect:t=>{t.damage+=25; t.splashDmg+=10;}},
         {name:'Volcanic Oven', cost:350, tip:'+40 damage, leaves fire patches', 
-         effect:t=>{t.damage+=40; t.splashDmg+=20; t.firePatches=true; t.fireDuration=3;}},
+         effect:t=>{t.damage+=40; t.splashDmg+=20; t.firePatches=true; t.fireDuration=3; t.damageType='fire'; t.splashType='fire';}},
         {name:'Magma Chamber', cost:600, tip:'+70 damage, spreading fire', 
-         effect:t=>{t.damage+=70; t.splashDmg+=35; t.fireSpread=true; t.fireDuration=5;}},
+         effect:t=>{t.damage+=70; t.splashDmg+=35; t.fireSpread=true; t.fireDuration=5; t.damageType='fire'; t.splashType='fire';}},
         {name:'Planetary Forge', cost:1000, tip:'Devastating explosions, permanent fire zones', 
-         effect:t=>{t.damage+=120; t.splashDmg+=60; t.splash+=40; t.permanentFire=true; t.chainExplosions=true;}}
+         effect:t=>{t.damage+=120; t.splashDmg+=60; t.splash+=40; t.permanentFire=true; t.chainExplosions=true; t.damageType='fire'; t.splashType='fire';}}
       ]
     },
     { // Path 1: Convection Master

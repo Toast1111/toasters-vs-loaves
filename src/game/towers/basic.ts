@@ -15,11 +15,11 @@ const basic = {
         {name:'Precision Coils', cost:120, tip:'+10 damage, +0.2 fire rate', 
          effect:t=>{t.damage+=10; t.fireRate+=0.2;}},
         {name:'Tungsten Elements', cost:200, tip:'+15 damage, burns enemies', 
-         effect:t=>{t.damage+=15; t.burnChance=0.3; t.burnDamage=5;}},
+         effect:t=>{t.damage+=15; t.burnChance=0.3; t.burnDamage=5; t.damageType='fire';}},
         {name:'Plasma Injection', cost:350, tip:'+25 damage, stronger burns', 
-         effect:t=>{t.damage+=25; t.burnChance=0.5; t.burnDamage=10;}},
+         effect:t=>{t.damage+=25; t.burnChance=0.5; t.burnDamage=10; t.damageType='fire';}},
         {name:'Solar Core', cost:600, tip:'Massive damage, burn spreads', 
-         effect:t=>{t.damage+=50; t.burnChance=0.8; t.burnDamage=20; t.burnSpread=true;}}
+         effect:t=>{t.damage+=50; t.burnChance=0.8; t.burnDamage=20; t.burnSpread=true; t.damageType='fire';}}
       ]
     },
     { // Path 1: Range & Detection - Utility focused
@@ -30,11 +30,11 @@ const basic = {
         {name:'Heat Sensor', cost:150, tip:'+40 range, detects cloaked', 
          effect:t=>{t.range+=40; t.camoDetection=true;}},
         {name:'Thermal Scope', cost:250, tip:'+60 range, slows enemies', 
-         effect:t=>{t.range+=60; t.slowChance=0.4; t.slowAmount=0.3;}},
+         effect:t=>{t.range+=60; t.slowChance=0.4; t.slowAmount=0.3; t.damageType='frost';}},
         {name:'Satellite Link', cost:420, tip:'+100 range, reveals all enemies', 
          effect:t=>{t.range+=100; t.globalDetection=true; t.slowChance=0.6;}},
         {name:'Orbital Strike', cost:800, tip:'Unlimited range, devastating slow', 
-         effect:t=>{t.unlimitedRange=true; t.slowChance=0.9; t.slowAmount=0.7; t.orbital=true;}}
+         effect:t=>{t.unlimitedRange=true; t.slowChance=0.9; t.slowAmount=0.7; t.orbital=true; t.damageType='frost';}}
       ]
     },
     { // Path 2: Rapid Fire - Speed focused

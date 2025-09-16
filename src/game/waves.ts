@@ -49,6 +49,77 @@ export function buildWave(n){
     wave.push({type:'croissant', hp:300+25*n, speed:50+1*n, bounty:30, special:'regenerate'});
   }
   
+  // Add charred bread - fire resistant but vulnerable to frost
+  if (n >= 4 && n % 6 === 0) {
+    const charredCount = 2 + Math.floor(n/5);
+    for(let i=0; i<charredCount; i++) {
+      wave.push({
+        type:'charred_bread', 
+        hp:150+15*n, 
+        speed:55+1.2*n, 
+        bounty:25,
+        resistances: {fire: 0.8, frost: -0.5} // 80% fire resistance, 50% extra frost damage
+      });
+    }
+  }
+  
+  // Add stale bread - vulnerable to explosion but resistant to piercing
+  if (n >= 3 && n % 4 === 0) {
+    const staleCount = 3 + Math.floor(n/4);
+    for(let i=0; i<staleCount; i++) {
+      wave.push({
+        type:'stale_bread', 
+        hp:90+8*n, 
+        speed:65+1.3*n, 
+        bounty:18,
+        resistances: {explosion: -0.6, piercing: 0.4} // 60% extra explosion damage, 40% piercing resistance
+      });
+    }
+  }
+  
+  // Add moldy bread - resists most damage types but spreads poison on death
+  if (n >= 6 && n % 8 === 0) {
+    const moldyCount = 1 + Math.floor(n/10);
+    for(let i=0; i<moldyCount; i++) {
+      wave.push({
+        type:'moldy_bread', 
+        hp:200+20*n, 
+        speed:40+0.8*n, 
+        bounty:40,
+        resistances: {physical: 0.5, fire: 0.3, frost: 0.3, piercing: 0.6} // Resistant to most damage
+      });
+    }
+  }
+  
+  // Add frozen bread - immune to slow effects, frost resistant but fire vulnerable
+  if (n >= 5 && n % 7 === 0) {
+    const frozenCount = 2 + Math.floor(n/6);
+    for(let i=0; i<frozenCount; i++) {
+      wave.push({
+        type:'frozen_bread', 
+        hp:180+18*n, 
+        speed:50+1*n, 
+        bounty:35,
+        special:'freeze_immune',
+        resistances: {frost: 0.9, fire: -0.7} // 90% frost resistance, 70% extra fire damage
+      });
+    }
+  }
+  
+  // Add volatile bread - explodes on death dealing area damage
+  if (n >= 7 && n % 9 === 0) {
+    const volatileCount = 1 + Math.floor(n/8);
+    for(let i=0; i<volatileCount; i++) {
+      wave.push({
+        type:'volatile_bread', 
+        hp:120+12*n, 
+        speed:60+1.5*n, 
+        bounty:30,
+        resistances: {explosion: 0.5} // Some explosion resistance (but still explodes on death to buff others)
+      });
+    }
+  }
+  
   for(let i=wave.length-1;i>0;i--){ const j=(Math.random()* (i+1))|0; [wave[i],wave[j]]=[wave[j],wave[i]]; }
   return wave;
 }

@@ -11,7 +11,8 @@ export function spawnBread(spec){
     id:++_id, type:spec.type, hp:spec.hp, maxHp:spec.hp, speed:spec.speed, 
     bounty:spec.bounty, wpt:0, x:waypoints[0].x, y:waypoints[0].y, r:size, 
     alive:true, special:spec.special||null, armor:spec.armor||0,
-    lastSpeedBurst: 0, regenerateTimer: 0
+    lastSpeedBurst: 0, regenerateTimer: 0,
+    resistances: spec.resistances || {}
   }; 
   breads.push(e); 
 }
@@ -48,8 +49,8 @@ export function stepBreads(dt, state){
       }
     }
     
-    // Slow effect
-    if(e.slowDuration > 0) {
+    // Slow effect (unless immune)
+    if(e.slowDuration > 0 && e.special !== 'freeze_immune') {
       e.slowDuration -= dt;
       speedMultiplier *= (1 - (e.slowAmount || 0));
     }
@@ -58,6 +59,20 @@ export function stepBreads(dt, state){
     if(e.stunDuration > 0) {
       e.stunDuration -= dt;
       speedMultiplier = 0; // Completely stopped
+    }
+    
+    // Speed boost from volatile bread explosions
+    if(e.speedBoostTimer > 0) {
+      e.speedBoostTimer -= dt;
+      speedMultiplier *= (e.speedBoostMultiplier || 1);
+    }
+    
+    // Explosion armor buff (stacks with regular armor)
+    if(e.explosionArmorTimer > 0) {
+      e.explosionArmorTimer -= dt;
+      if(e.explosionArmorTimer <= 0) {
+        e.explosionArmor = 0; // Remove buff when timer expires
+      }
     }
     
     // Handle special abilities
@@ -108,20 +123,35 @@ const SPLIT_PATTERNS = {
   'sourdough_boss': { into: 'sourdough_split', count: 3, sizeMultiplier: 0.4, statMultiplier: 0.3 }
 };
 
-export function damageBread(e, dmg, state){
-  // Apply armor reduction
-  const actualDamage = dmg * (1 - (e.armor || 0));
+export function damageBread(e, dmg, state, damageType = 'physical'){
+  // Calculate base damage after armor (including temporary explosion armor)
+  const totalArmor = (e.armor || 0) + (e.explosionArmor || 0);
+  let actualDamage = dmg * (1 - totalArmor);
+  
+  // Apply damage type resistances/vulnerabilities
+  if (e.resistances && e.resistances[damageType] !== undefined) {
+    actualDamage *= (1 - e.resistances[damageType]);
+  }
+  
+  // Ensure minimum damage (can't be completely immune)
+  actualDamage = Math.max(actualDamage, dmg * 0.05);
+  
   e.hp -= actualDamage; 
   
-  // Show damage number
+  // Show damage number with color coding for resistances
   const isCrit = actualDamage > e.maxHp * 0.3;
-  spawnDamageNumber(e.x, e.y - 10, actualDamage, isCrit);
+  const isResisted = e.resistances && e.resistances[damageType] > 0;
+  const isVulnerable = e.resistances && e.resistances[damageType] < 0;
+  spawnDamageNumber(e.x, e.y - 10, actualDamage, isCrit, isResisted, isVulnerable);
   
   if(e.hp <= 0){ 
     e.alive = false; 
     
     // Record kill for achievements
     recordEnemyKilled(e);
+    
+    // Special death effects for certain enemy types
+    handleSpecialDeathEffects(e, state);
     
     // Death explosion
     spawnExplosion(e.x, e.y, e.r > 15 ? 20 : 8);
@@ -150,7 +180,8 @@ export function damageBread(e, dmg, state){
           special: null, 
           armor: 0,
           lastSpeedBurst: 0, 
-          regenerateTimer: 0
+          regenerateTimer: 0,
+          resistances: {}
         };
         breads.push(splitBread);
       }
@@ -174,7 +205,7 @@ export function damageBread(e, dmg, state){
           speed: e.speed * 1.2, bounty: Math.floor(e.bounty * 0.3), wpt: e.wpt,
           x: e.x + Math.cos(angle) * 25, y: e.y + Math.sin(angle) * 25,
           r: 8, alive: true, special: null, armor: 0,
-          lastSpeedBurst: 0, regenerateTimer: 0
+          lastSpeedBurst: 0, regenerateTimer: 0, resistances: {}
         };
         breads.push(splitBread);
       }
@@ -198,4 +229,88 @@ export function damageBread(e, dmg, state){
     }
   }
 }
+
+// Handle special death effects for specific enemy types
+function handleSpecialDeathEffects(e, state) {
+  switch(e.type) {
+    case 'moldy_bread':
+      // Spread poison cloud that damages nearby enemies
+      import('./particles').then(({ spawnPoisonCloud }) => {
+        spawnPoisonCloud(e.x, e.y, 40, 3000); // 40px radius, 3 second duration
+      }).catch(err => console.warn('Failed to spawn poison cloud:', err));
+      
+      // Log special death effect
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          UI.log(`☠️ Moldy bread released toxic spores!`);
+        }
+      }).catch(err => console.warn('Failed to log moldy death:', err));
+      break;
+      
+    case 'frozen_bread':
+      // Create frost nova that slows nearby enemies
+      breads.forEach(other => {
+        if (other.alive && other.id !== e.id) {
+          const dx = other.x - e.x;
+          const dy = other.y - e.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 60) {
+            other.slowTimer = Math.max(other.slowTimer || 0, 4000); // 4 second slow
+            other.slowMultiplier = 0.3; // 70% speed reduction
+          }
+        }
+      });
+      
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          UI.log(`❄️ Frozen bread created a frost nova!`);
+        }
+      }).catch(err => console.warn('Failed to log frost nova:', err));
+      break;
+      
+    case 'volatile_bread':
+      // Explosive healing that buffs nearby enemies - dangerous to let explode!
+      const explosionRadius = 80;
+      let enemiesBuffed = 0;
+      breads.forEach(other => {
+        if (other.alive && other.id !== e.id) {
+          const dx = other.x - e.x;
+          const dy = other.y - e.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < explosionRadius) {
+            const healingPower = 1 - dist / explosionRadius;
+            
+            // Heal nearby enemies
+            const healAmount = Math.ceil(other.maxHp * 0.3 * healingPower);
+            other.hp = Math.min(other.maxHp, other.hp + healAmount);
+            
+            // Speed buff
+            other.speedBoostTimer = 5000; // 5 second boost
+            other.speedBoostMultiplier = 1 + (0.5 * healingPower); // Up to 50% speed boost
+            
+            // Temporary armor buff
+            other.explosionArmor = (other.explosionArmor || 0) + (0.3 * healingPower);
+            other.explosionArmorTimer = 8000; // 8 second armor buff
+            
+            enemiesBuffed++;
+            
+            // Show healing numbers in green
+            spawnDamageNumber(other.x, other.y - 15, healAmount, false, false, false, true);
+          }
+        }
+      });
+      
+      import('./ui').then(({ UI }) => {
+        if (UI && UI.log) {
+          if (enemiesBuffed > 0) {
+            UI.log(`💥💚 Volatile bread explosion healed and buffed ${enemiesBuffed} enemies!`);
+          } else {
+            UI.log(`💥 Volatile bread exploded harmlessly!`);
+          }
+        }
+      }).catch(err => console.warn('Failed to log explosion:', err));
+      break;
+  }
+}
+
 let _id=0;

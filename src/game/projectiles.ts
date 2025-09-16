@@ -38,6 +38,8 @@ export function fireFrom(t, target, customDamage = null){
   p.splash = t.splash || 0;
   p.splashDmg = t.splashDmg || 0;
   p.life = t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed));
+  p.damageType = t.damageType || 'physical';
+  p.splashType = t.splashType || 'explosion';
   // Special upgrade effects
   p.burnChance = t.burnChance || 0;
   p.burnDamage = t.burnDamage || 0;
@@ -60,41 +62,27 @@ export function fireFrom(t, target, customDamage = null){
   
   projectiles.push(p);
   
-  // Handle multi-shot from upgrades - use pool instead of spread operator
-  if(t.multiShot && t.multiShot > 1) {
-    for(let i = 1; i < t.multiShot; i++) {
-      const spreadAngle = angle + (Math.random() - 0.5) * 0.3; // 0.3 radian spread
-      const extraP = getPooledProjectile();
-      // Copy all properties from main projectile
-      extraP.id = ++_id;
-      extraP.x = p.x;
-      extraP.y = p.y;
-      extraP.vx = Math.cos(spreadAngle) * speed;
-      extraP.vy = Math.sin(spreadAngle) * speed;
-      extraP.dmg = p.dmg;
-      extraP.pierce = p.pierce;
-      extraP.splash = p.splash;
-      extraP.splashDmg = p.splashDmg;
-      extraP.life = p.life;
-      extraP.burnChance = p.burnChance;
-      extraP.burnDamage = p.burnDamage;
-      extraP.burnSpread = p.burnSpread;
-      extraP.slowChance = p.slowChance;
-      extraP.slowAmount = p.slowAmount;
-      extraP.stunChance = p.stunChance;
-      extraP.stunDuration = p.stunDuration;
-      extraP.homing = p.homing;
-      extraP.ricochet = p.ricochet;
-      extraP.bounceCount = p.bounceCount;
-      extraP.source = p.source;
-      extraP.explosive = p.explosive;
-      extraP.lifetime = p.lifetime;
-      extraP.explosionRadius = p.explosionRadius;
-      extraP.damage = p.damage;
-      extraP.dead = false;
-      projectiles.push(extraP);
-    }
-  }
+        // Create additional projectiles for multi-shot
+      for (let i = 1; i < t.multiShot; i++) {
+        const spreadAngle = angle + (i - (t.multiShot - 1) / 2) * 0.3;
+        
+        const extraP = getPooledProjectile();
+        extraP.id = ++_id;
+        extraP.x = t.x;
+        extraP.y = t.y;
+        extraP.vx = Math.cos(spreadAngle) * speed;
+        extraP.vy = Math.sin(spreadAngle) * speed;
+        extraP.dmg = damage;
+        extraP.pierce = t.pierce || 0;
+        extraP.splash = t.splash || 0;
+        extraP.splashDmg = t.splashDmg || 0;
+        extraP.life = t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed));
+        extraP.unlimitedRange = t.unlimitedRange || false;
+        extraP.damageType = t.damageType || 'physical';
+        extraP.splashType = t.splashType || 'explosion';
+        
+        projectiles.push(extraP);
+      }
 }
 
 export function stepProjectiles(dt, state){
@@ -131,7 +119,7 @@ export function stepProjectiles(dt, state){
             // Damage falloff with distance
             const falloff = Math.max(0.3, 1 - (dist / p.explosionRadius));
             const explosionDamage = p.damage * falloff;
-            damageBread(e, explosionDamage, state);
+            damageBread(e, explosionDamage, state, 'explosion');
           }
         }
         
@@ -170,7 +158,7 @@ export function stepProjectiles(dt, state){
       for(const e of breads){ 
         if(!e.alive) continue; 
         if(Math.hypot(p.x-e.x,p.y-e.y)<=e.r){
-          damageBread(e,p.dmg,state);
+          damageBread(e,p.dmg,state, p.damageType || 'physical');
           
           // Apply status effects
           if(p.burnChance > 0 && Math.random() < p.burnChance) {
@@ -189,7 +177,7 @@ export function stepProjectiles(dt, state){
               if(!e2.alive) continue; 
               const d=Math.hypot(p.x-e2.x,p.y-e2.y); 
               if(d<=p.splash && e2!==e){ 
-                damageBread(e2,p.splashDmg,state);
+                damageBread(e2,p.splashDmg,state, p.splashType || 'explosion');
                 // Apply status effects to splash targets too
                 if(p.burnChance > 0 && Math.random() < p.burnChance * 0.5) {
                   applyBurn(e2, p.burnDamage * 0.7, false);
