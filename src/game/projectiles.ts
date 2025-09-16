@@ -2,44 +2,93 @@
 import { breads, damageBread } from "./breads";
 export const projectiles=[];
 
+// Object pool for performance optimization
+const projectilePool = [];
+let _id = 0;
+
+function getPooledProjectile() {
+  return projectilePool.pop() || {};
+}
+
+function returnToPool(projectile) {
+  // Reset all properties to avoid contamination
+  for (let key in projectile) {
+    delete projectile[key];
+  }
+  projectilePool.push(projectile);
+}
+
 export function fireFrom(t, target, customDamage = null){
   const angle=Math.atan2(target.y-t.y, target.x-t.x);
   const speed=t.projectileSpeed;
   const damage = customDamage || t.damage;
   
-  // Enhanced projectile with new upgrade effects
-  const p={
-    id:++_id, x:t.x, y:t.y, 
-    vx:Math.cos(angle)*speed, vy:Math.sin(angle)*speed, 
-    dmg:damage, pierce:(t.pierce||0), 
-    splash:t.splash||0, splashDmg:t.splashDmg||0, 
-    life: t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed)), // Override for special upgrades
-    // New upgrade effects
-    burnChance: t.burnChance || 0,
-    burnDamage: t.burnDamage || 0,
-    burnSpread: t.burnSpread || false,
-    slowChance: t.slowChance || 0,
-    slowAmount: t.slowAmount || 0,
-    stunChance: t.stunChance || 0,
-    stunDuration: t.stunDuration || 0,
-    homing: t.homing || false,
-    ricochet: t.ricochet || false,
-    bounceCount: t.bounceCount || 0,
-    source: t // Reference to source tower for network effects
-  };
+  // Get projectile from pool and initialize all properties
+  const p = getPooledProjectile();
+  p.id = ++_id;
+  p.x = t.x;
+  p.y = t.y;
+  p.vx = Math.cos(angle)*speed;
+  p.vy = Math.sin(angle)*speed;
+  p.dmg = damage;
+  p.pierce = t.pierce || 0;
+  p.splash = t.splash || 0;
+  p.splashDmg = t.splashDmg || 0;
+  p.life = t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed));
+  // Special upgrade effects
+  p.burnChance = t.burnChance || 0;
+  p.burnDamage = t.burnDamage || 0;
+  p.burnSpread = t.burnSpread || false;
+  p.slowChance = t.slowChance || 0;
+  p.slowAmount = t.slowAmount || 0;
+  p.stunChance = t.stunChance || 0;
+  p.stunDuration = t.stunDuration || 0;
+  p.homing = t.homing || false;
+  p.ricochet = t.ricochet || false;
+  p.bounceCount = t.bounceCount || 0;
+  p.source = t;
+  // Explosive projectiles
+  p.explosive = t.explosive || false;
+  p.lifetime = t.explosiveLifetime || 0;
+  p.explosionRadius = t.explosionRadius || 0;
+  p.damage = damage; // For explosive damage calculation
+  // Clear dead flag
+  p.dead = false;
   
   projectiles.push(p);
   
-  // Handle multi-shot from upgrades
+  // Handle multi-shot from upgrades - use pool instead of spread operator
   if(t.multiShot && t.multiShot > 1) {
     for(let i = 1; i < t.multiShot; i++) {
       const spreadAngle = angle + (Math.random() - 0.5) * 0.3; // 0.3 radian spread
-      const extraP = {
-        ...p,
-        id: ++_id,
-        vx: Math.cos(spreadAngle) * speed,
-        vy: Math.sin(spreadAngle) * speed
-      };
+      const extraP = getPooledProjectile();
+      // Copy all properties from main projectile
+      extraP.id = ++_id;
+      extraP.x = p.x;
+      extraP.y = p.y;
+      extraP.vx = Math.cos(spreadAngle) * speed;
+      extraP.vy = Math.sin(spreadAngle) * speed;
+      extraP.dmg = p.dmg;
+      extraP.pierce = p.pierce;
+      extraP.splash = p.splash;
+      extraP.splashDmg = p.splashDmg;
+      extraP.life = p.life;
+      extraP.burnChance = p.burnChance;
+      extraP.burnDamage = p.burnDamage;
+      extraP.burnSpread = p.burnSpread;
+      extraP.slowChance = p.slowChance;
+      extraP.slowAmount = p.slowAmount;
+      extraP.stunChance = p.stunChance;
+      extraP.stunDuration = p.stunDuration;
+      extraP.homing = p.homing;
+      extraP.ricochet = p.ricochet;
+      extraP.bounceCount = p.bounceCount;
+      extraP.source = p.source;
+      extraP.explosive = p.explosive;
+      extraP.lifetime = p.lifetime;
+      extraP.explosionRadius = p.explosionRadius;
+      extraP.damage = p.damage;
+      extraP.dead = false;
       projectiles.push(extraP);
     }
   }
@@ -173,7 +222,13 @@ export function stepProjectiles(dt, state){
       }
     }
   }
-  for(let i=projectiles.length-1;i>=0;i--) if(projectiles[i].dead) projectiles.splice(i,1);
+  // Clean up dead projectiles and return them to pool
+  for(let i=projectiles.length-1;i>=0;i--) {
+    if(projectiles[i].dead) {
+      returnToPool(projectiles[i]);
+      projectiles.splice(i,1);
+    }
+  }
 }
 
 // Status effect functions
@@ -193,5 +248,3 @@ function applySlow(enemy, amount) {
 function applyStun(enemy, duration) {
   enemy.stunDuration = Math.max(enemy.stunDuration || 0, duration);
 }
-
-let _id=0;
