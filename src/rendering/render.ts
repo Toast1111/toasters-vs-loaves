@@ -405,7 +405,10 @@ export function drawScene(ctx, state, game){
       ctx.fill();
       ctx.globalAlpha = 1;
     } else if (pr.type === 'microwave_beam') {
-      const alpha = pr.life / 0.2;
+      // Skip rendering if delay hasn't expired yet
+      if (pr.delay !== undefined && !pr.spawned) continue;
+      
+      const alpha = pr.life / (pr.totalLife || 0.2);
       ctx.globalAlpha = alpha;
       ctx.strokeStyle = pr.color;
       ctx.lineWidth = pr.width;
@@ -417,13 +420,27 @@ export function drawScene(ctx, state, game){
       
       ctx.beginPath();
       ctx.moveTo(pr.x1, pr.y1);
-      ctx.lineTo(pr.x2, pr.y2);
+      
+      // Animate the beam by drawing only up to the current progress
+      if (pr.progress !== undefined) {
+        const dx = pr.x2 - pr.x1;
+        const dy = pr.y2 - pr.y1;
+        const currentX = pr.x1 + dx * pr.progress;
+        const currentY = pr.y1 + dy * pr.progress;
+        ctx.lineTo(currentX, currentY);
+      } else {
+        ctx.lineTo(pr.x2, pr.y2);
+      }
+      
       ctx.stroke();
       
       // Reset shadow
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
     } else if (pr.type === 'energy') {
+      // Skip rendering if delay hasn't expired yet
+      if (pr.delay !== undefined && !pr.spawned) continue;
+      
       const alpha = pr.life / 0.4;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = pr.color;

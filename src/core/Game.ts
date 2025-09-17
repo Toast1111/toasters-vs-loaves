@@ -379,7 +379,7 @@ export class Game{
               // Custom microwave beam effect instead of regular muzzle flash
               import('../systems/particles').then(({spawnMicrowaveBeam}) => {
                 if(spawnMicrowaveBeam) {
-                  spawnMicrowaveBeam(t.x, t.y, target.x, target.y);
+                  spawnMicrowaveBeam(t.x, t.y, target.x, target.y, t.projectileSpeed || 300);
                 }
               }).catch(() => {});
             } else {
@@ -426,7 +426,7 @@ export class Game{
                 if(t.type === 'microwave') {
                   import('../systems/particles').then(({spawnMicrowaveBeam}) => {
                     if(spawnMicrowaveBeam) {
-                      spawnMicrowaveBeam(t.x, t.y, secondTarget.x, secondTarget.y);
+                      spawnMicrowaveBeam(t.x, t.y, secondTarget.x, secondTarget.y, t.projectileSpeed || 300);
                     }
                   }).catch(() => {});
                 } else {

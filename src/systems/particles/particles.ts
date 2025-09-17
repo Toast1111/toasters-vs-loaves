@@ -126,27 +126,33 @@ export function spawnElectricalSparks(x, y, count = 5) {
   }
 }
 
-export function spawnMicrowaveBeam(x1, y1, x2, y2) {
-  // Create microwave beam effect
+export function spawnMicrowaveBeam(x1, y1, x2, y2, projectileSpeed = 300) {
+  // Calculate travel time based on distance and projectile speed
   const dx = x2 - x1;
   const dy = y2 - y1;
   const distance = Math.sqrt(dx * dx + dy * dy);
+  const travelTime = distance / projectileSpeed;
   
+  // Create animated microwave beam that grows over time
   particles.push({
     type: 'microwave_beam',
     x1, y1, x2, y2,
-    life: 0.2,
+    life: travelTime + 0.1, // Beam lasts slightly longer than travel time
+    totalLife: travelTime + 0.1,
+    travelTime: travelTime,
     color: '#ff6600',
     width: 4,
-    intensity: 1
+    intensity: 1,
+    progress: 0 // Animation progress from 0 to 1
   });
   
-  // Add energy particles along the beam
+  // Add energy particles along the beam with delayed spawning
   const particleCount = Math.floor(distance / 15);
   for(let i = 0; i < particleCount; i++) {
-    const t = Math.random();
+    const t = i / particleCount; // Position along beam (0 to 1)
     const x = x1 + dx * t;
     const y = y1 + dy * t;
+    const delay = t * travelTime; // Delay based on position along beam
     
     particles.push({
       x: x + (Math.random() - 0.5) * 10,
@@ -157,7 +163,9 @@ export function spawnMicrowaveBeam(x1, y1, x2, y2) {
       life: Math.random() * 0.3 + 0.1,
       type: 'energy',
       color: '#ff9933',
-      size: Math.random() * 2 + 1
+      size: Math.random() * 2 + 1,
+      delay: delay, // Particle will start after this delay
+      spawned: false // Track if particle has been activated
     });
   }
 }
@@ -282,9 +290,27 @@ export function spawnDamageNumber(x, y, damage, isCrit = false, isResisted = fal
 
 export function stepParticles(dt){ 
   for(const pr of particles){ 
-    if (pr.type !== 'muzzle') pr.vy += pr.g * dt; 
-    pr.x += pr.vx * dt; 
-    pr.y += pr.vy * dt; 
+    // Handle delayed particles (energy particles that spawn along the beam)
+    if (pr.delay !== undefined && !pr.spawned) {
+      pr.delay -= dt;
+      if (pr.delay <= 0) {
+        pr.spawned = true;
+        pr.delay = undefined; // Clean up
+      } else {
+        continue; // Skip updating this particle until it's time to spawn
+      }
+    }
+    
+    // Handle animated microwave beam
+    if (pr.type === 'microwave_beam' && pr.travelTime !== undefined) {
+      pr.progress = Math.min(1, (pr.totalLife - pr.life) / pr.travelTime);
+    }
+    
+    if (pr.type !== 'muzzle' && pr.type !== 'microwave_beam' && pr.type !== 'laser_beam' && pr.type !== 'lightning' && pr.type !== 'chain_indicator') {
+      pr.vy += pr.g * dt; 
+      pr.x += pr.vx * dt; 
+      pr.y += pr.vy * dt; 
+    }
     pr.life -= dt; 
     if(pr.life <= 0) pr.dead = true; 
   } 
