@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createWikiModal } from './wiki';
 import { createTechModal } from './techTree';
+import { menuMusic } from '../../audio/menuMusic';
 
 export enum GameState {
   TITLE_SCREEN = 'title_screen',
@@ -96,6 +97,13 @@ export class MenuManager {
     
     this.clearMenuContainer();
     
+    // Audio control: play during menu states, pause (fade) during in-game
+    if ([GameState.TITLE_SCREEN, GameState.KITCHEN_HQ, GameState.MAP_SELECT, GameState.DIFFICULTY_SELECT, GameState.GAME_OVER, GameState.VICTORY].includes(newState)) {
+      menuMusic.playIfMenu();
+    } else if (newState === GameState.IN_GAME) {
+      menuMusic.fadeOutAndPause(800);
+    }
+
     switch (newState) {
       case GameState.TITLE_SCREEN:
         this.showTitleScreen();
@@ -163,6 +171,8 @@ export class MenuManager {
     document.getElementById('enterGame').onclick = () => {
       this.transition(GameState.KITCHEN_HQ);
     };
+    // Initialize music system (gesture captured by button click too)
+    menuMusic.init();
   }
 
   private showKitchenHQ() {
@@ -537,8 +547,75 @@ export class MenuManager {
   }
 
   private showSettingsModal() {
-    // Placeholder implementation
-    alert('⚙️ Settings coming soon! Customize your kitchen experience.');
+    const existing = document.getElementById('settingsModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'settingsModal';
+    modal.style.cssText = `position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);`;
+    const storedScale = parseFloat(localStorage.getItem('tvsl_glowScale') || '1');
+    if (!isNaN(storedScale)) document.documentElement.style.setProperty('--title-glow-scale', storedScale.toString());
+    const volPct = (menuMusic.getVolumePercent && menuMusic.getVolumePercent()) || 141;
+    const volDb = (menuMusic.getVolumeDb && menuMusic.getVolumeDb()) || 0;
+    modal.innerHTML = `
+      <div style="background:#16161d;border:1px solid #2b2e46;padding:28px 32px;border-radius:18px;max-width:520px;width:90%;font-family:inherit;color:#e7e7ee;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <h2 style="margin:0 0 4px 0;font-size:22px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px;">⚙️ Settings</h2>
+        <p style="margin:0 0 20px 0;font-size:13px;color:var(--muted);">Adjust visual & audio-reactive presentation.</p>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div>
+            <label style="display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;margin-bottom:6px;">
+              <span>Bass Glow Intensity</span>
+              <span id="glowScaleValue" style="color:var(--accent);font-variant-numeric:tabular-nums;">${storedScale.toFixed(2)}</span>
+            </label>
+            <input id="glowScaleSlider" type="range" min="0" max="1" step="0.01" value="${storedScale}" style="width:100%;">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">0 = almost static, 1 = current subtle motion scaling. Future versions may add a more dynamic mode.</div>
+          </div>
+          <div>
+            <label style="display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;margin:14px 0 6px;">
+              <span>Menu Music Volume</span>
+              <span id="musicVolLabel" style="color:var(--accent);font-variant-numeric:tabular-nums;">${volPct}% (${volDb === -Infinity ? '-∞' : volDb.toFixed(1)} dB)</span>
+            </label>
+            <input id="musicVolSlider" type="range" min="0" max="150" step="1" value="${volPct}" style="width:100%;">
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">100% = baseline (0 dB). 141% ≈ +3 dB. Max 150% (~+3.5 dB). Stored locally.</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:26px;">
+          <button id="closeSettings" class="menu-btn secondary" style="min-width:110px;">Close</button>
+          <button id="resetSettings" class="menu-btn" style="background:#272d3a;">Reset</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const slider = modal.querySelector('#glowScaleSlider') as HTMLInputElement;
+    const valueEl = modal.querySelector('#glowScaleValue') as HTMLElement;
+    slider.addEventListener('input', ()=>{
+      const v = parseFloat(slider.value);
+      document.documentElement.style.setProperty('--title-glow-scale', v.toString());
+      valueEl.textContent = v.toFixed(2);
+      localStorage.setItem('tvsl_glowScale', v.toString());
+    });
+    const musicSlider = modal.querySelector('#musicVolSlider') as HTMLInputElement;
+    const musicLabel = modal.querySelector('#musicVolLabel') as HTMLElement;
+    if (musicSlider && musicLabel) {
+      musicSlider.addEventListener('input', ()=>{
+        const pct = parseFloat(musicSlider.value);
+        if (menuMusic.setVolumePercent) menuMusic.setVolumePercent(pct);
+        const db = menuMusic.getVolumeDb ? menuMusic.getVolumeDb() : 0;
+        musicLabel.textContent = `${pct}% (${db === -Infinity ? '-∞' : db.toFixed(1)} dB)`;
+      });
+    }
+    modal.querySelector('#closeSettings').addEventListener('click', ()=>modal.remove());
+    modal.querySelector('#resetSettings').addEventListener('click', ()=>{
+      slider.value = '1';
+      document.documentElement.style.setProperty('--title-glow-scale', '1');
+      valueEl.textContent = '1.00';
+      localStorage.setItem('tvsl_glowScale', '1');
+      if (musicSlider) {
+        musicSlider.value = '141';
+        if (menuMusic.setVolumePercent) menuMusic.setVolumePercent(141);
+        const db = menuMusic.getVolumeDb ? menuMusic.getVolumeDb() : 0;
+        musicLabel.textContent = `141% (${db.toFixed(1)} dB)`;
+      }
+    });
+    modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
   }
 
   private getDifficultyIcon(difficultyId: string): string {

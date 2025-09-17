@@ -150,13 +150,41 @@
       padding: 40px;
     }
     
+  :root { --title-glow: 0; --title-glow-scale: 1; }
     .game-title {
+      position: relative;
       font-size: 3.5rem;
       font-weight: 900;
       color: var(--accent);
       margin: 0 0 20px 0;
-      text-shadow: 0 4px 20px rgba(255, 179, 71, 0.3);
+      /* Direct amplitude (0=no glow, 1=max). Combine with user scale. */
+  --g: calc(var(--title-glow) * var(--title-glow-scale));
+  --gb: calc(var(--title-glow-bright) * var(--title-glow-scale));
+      /* Minimal readable stroke via text-shadow only when glow present */
+      text-shadow:
+        0 0 calc(6px + 10px * var(--gb)) rgba(255,179,71, calc(0.55 * var(--gb))),
+        0 0 calc(24px + 60px * var(--gb)) rgba(255,210,120, calc(0.40 * var(--gb))),
+        0 0 calc(50px + 120px * var(--gb)) rgba(255,140,0, calc(0.28 * var(--gb))),
+        0 0 calc(90px + 200px * var(--gb)) rgba(255,90,0, calc(0.16 * var(--gb)));
       animation: titlePulse 3s ease-in-out infinite;
+      transition: text-shadow 0.1s linear;
+    }
+    .game-title::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      left: 50%;
+      top: 50%;
+  transform: translate(-50%, -50%) scale(calc(0.35 + 0.75 * var(--gb)));
+      width: 160%;
+      height: 160%;
+      background: radial-gradient(circle at 50% 50%, rgba(255,185,80,0.55) 0%, rgba(255,140,0,0.28) 35%, rgba(255,120,0,0.08) 60%, rgba(255,90,0,0.0) 75%);
+  filter: blur(calc(16px + 80px * var(--gb)));
+  opacity: calc(var(--gb));
+      pointer-events: none;
+      z-index: -1;
+      mix-blend-mode: screen;
+      transition: opacity 0.12s linear, transform 0.25s ease, filter 0.18s linear;
     }
     
     .title-subtitle {
@@ -900,7 +928,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-BdxGolw_.js"></script>
+  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-BGe1pHLE.js"></script>
 </head>
 <body>
   <div class="wrap menu-mode">
