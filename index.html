@@ -10,7 +10,8 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b10,#14141b);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-  .wrap{display:grid;grid-template-columns:1fr 240px;gap:10px;height:100%;padding:10px}
+  .wrap{display:grid;grid-template-columns:1fr 240px;grid-template-rows:1fr;gap:10px;height:100%;padding:10px}
+  #gamePanel{height:100%;display:block}
   .wrap.menu-mode{grid-template-columns:1fr}
     #gamePanel{position:relative;border:1px solid #27273a;border-radius:14px;overflow:hidden;background:#0c0f15}
     canvas{display:block;background:#0a0d12}
@@ -332,24 +333,30 @@
       height: 100%;
       background: linear-gradient(135deg, #0a0d12 0%, #1a1d2e 30%, #0f1419 100%);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      /* top-aligned to avoid header clipping at certain viewport heights */
+      justify-content: flex-start;
       animation: slideIn 0.5s ease-out;
       overflow-y: auto;
+      padding-top: clamp(20px, 4vh, 80px);
+      padding-bottom: 40px;
+      -webkit-overflow-scrolling: touch;
     }
     
     .level-content, .map-content {
       max-width: 1000px;
-      width: 90%;
-      padding: 40px 20px;
+      width: min(1000px, 94%);
+      padding: clamp(24px, 4vh, 48px) 20px 0 20px;
     }
     
     .level-header, .map-header {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 40px;
+      margin: 0 0 40px 0;
       position: relative;
+      padding-top: env(safe-area-inset-top, 0);
     }
     
     .back-btn {
@@ -371,11 +378,12 @@
     }
     
     .level-header h1, .map-header h1 {
-      font-size: 2.5rem;
+      font-size: clamp(2rem, 5vw, 2.8rem);
       font-weight: 900;
       color: var(--accent);
       margin: 0;
       text-align: center;
+      line-height: 1.05;
     }
     
     .level-subtitle, .map-subtitle {
@@ -387,9 +395,29 @@
     
     .levels-grid, .maps-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: clamp(16px, 2vw, 28px);
+      margin: 0 0 30px 0;
+      width: 100%;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1180px) {
+      .wrap:not(.menu-mode){
+        grid-template-columns: 1fr; /* collapse sidebar under canvas for medium widths */
+        grid-auto-rows: auto;
+      }
+      aside.side { order: 2; }
+      #gamePanel { order: 1; }
+    }
+    @media (max-width: 900px), (max-height: 640px) {
+      .level-content, .map-content { padding-top: 32px; }
+      .levels-grid, .maps-grid { grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); }
+      .level-card, .map-card { padding: 16px; }
+    }
+    @media (max-width: 600px) {
+      .level-header h1, .map-header h1 { font-size: clamp(1.8rem, 7vw, 2.2rem); }
+      .back-btn { padding: 10px 14px; font-size: 0.85rem; }
     }
     
     .level-card, .map-card {
@@ -601,24 +629,29 @@
       height: 100%;
       background: linear-gradient(135deg, #0a0d12 0%, #1a1d2e 30%, #0f1419 100%);
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       animation: slideIn 0.5s ease-out;
       overflow-y: auto;
+      padding-top: clamp(20px, 4vh, 80px);
+      padding-bottom: 48px;
+      -webkit-overflow-scrolling: touch;
     }
     
     .difficulty-content {
       max-width: 1200px;
-      width: 90%;
-      padding: 40px 20px;
+      width: min(1200px, 94%);
+      padding: clamp(24px, 4vh, 56px) 20px 0 20px;
     }
     
     .difficulty-header {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 40px;
+      margin: 0 0 40px 0;
       position: relative;
+      padding-top: env(safe-area-inset-top, 0);
     }
     
     .selected-map-info {
@@ -626,10 +659,11 @@
     }
     
     .selected-map-info h1 {
-      font-size: 2.5rem;
+      font-size: clamp(2rem, 5vw, 2.8rem);
       font-weight: 900;
       color: var(--accent);
       margin: 0 0 8px 0;
+      line-height: 1.05;
     }
     
     .selected-map-name {
@@ -640,9 +674,19 @@
     
     .difficulties-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: clamp(16px, 2vw, 28px);
+      margin: 0 0 30px 0;
+      width: 100%;
+    }
+
+    @media (max-width: 900px), (max-height: 640px) {
+      .difficulty-content { padding-top: 32px; }
+      .difficulties-grid { grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+      .difficulty-card { padding: 16px; }
+    }
+    @media (max-width: 600px) {
+      .selected-map-info h1 { font-size: clamp(1.8rem, 7vw, 2.2rem); }
     }
     
     .difficulty-card {

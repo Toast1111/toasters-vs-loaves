@@ -6,23 +6,32 @@ let menuManager: MenuManager;
 
 // Function to resize canvas to fit its container
 function resizeCanvas() {
-  const container = canvas.parentElement!;
+  const container = canvas.parentElement as HTMLElement;
+  const wrap = document.querySelector('.wrap') as HTMLElement;
+  if (wrap) {
+    // ensure wrapper always covers viewport height for dynamic environments
+    wrap.style.minHeight = window.innerHeight + 'px';
+  }
+  // Force container to occupy full height (minus wrapper vertical padding of 20px total)
+  const verticalPadding = 20; // .wrap has padding:10px top & bottom
+  const availableHeight = window.innerHeight - verticalPadding;
+  container.style.height = availableHeight + 'px';
+
   const rect = container.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  
-  // Set display size (css pixels)
+
+  // Prevent redundant resize if dimensions unchanged
+  if (canvas.width === rect.width * dpr && canvas.height === rect.height * dpr) return;
+
   canvas.style.width = rect.width + 'px';
   canvas.style.height = rect.height + 'px';
-  
-  // Set actual size in memory (scaled for retina displays)
   canvas.width = rect.width * dpr;
   canvas.height = rect.height * dpr;
-  
-  // Scale the context for retina displays
-  const ctx = canvas.getContext("2d")!;
+
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(1,0,0,1,0,0); // reset any prior scale before applying
   ctx.scale(dpr, dpr);
-  
-  // Update game state if game exists in MenuManager
+
   if (menuManager && menuManager.gameInstance && menuManager.gameInstance.state) {
     menuManager.gameInstance.state.w = rect.width;
     menuManager.gameInstance.state.h = rect.height;

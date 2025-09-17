@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { isPath, waypoints, grid, isBuildable } from "../content/maps"; // legacy
+import { isPath, waypoints, grid, isBuildable, isPathOnLevel } from "../content/maps"; // legacy + new helpers
 import { breads } from "../content/entities/breads";
 import { projectiles } from "../systems/projectiles";
 import { particles, damageNumbers } from "../systems/particles";
@@ -21,15 +21,16 @@ export function drawScene(ctx, state, game){
   
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle="#0d1017"; ctx.fillRect(0,0,W,H);
-  for(let y=0;y<H;y+=grid.ch){
-    for(let x=0;x<W;x+=grid.cw){
-      const cx=x+grid.cw/2, cy=y+grid.ch/2;
-      const path=isPath(cx,cy);
-      ctx.fillStyle= path? '#1d2331' : '#111827';
-      ctx.fillRect(x,y,grid.cw-1,grid.ch-1);
+  const level = state.currentLevel; // already declared later but we move reference earlier (harmless if undefined)
+  for (let y=0; y<H; y+=grid.ch) {
+    for (let x=0; x<W; x+=grid.cw) {
+      const cx = x + grid.cw/2, cy = y + grid.ch/2;
+      const onPath = level ? isPathOnLevel(level, cx, cy) : isPath(cx, cy);
+      ctx.fillStyle = onPath ? '#1d2331' : '#111827';
+      ctx.fillRect(x, y, grid.cw-1, grid.ch-1);
     }
   }
-  const level = state.currentLevel;
+  // reuse level reference defined above
   if (level && level.paths) {
     ctx.lineWidth=8;
     const colors = ["#2a3246", "#36425a", "#45546f", "#566684"]; // cycle colors
