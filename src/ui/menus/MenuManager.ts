@@ -729,11 +729,11 @@ export class MenuManager {
         name: 'Warm-Up',
         description: 'Perfect for learning the ropes. Enemies are slower and weaker.',
         color: '#7bd88f',
-        startingCoins: 200,
-        startingLives: 100,
+        startingCoins: 400,
+        startingLives: 150,
         enemyHealthMultiplier: 0.8,
         enemySpeedMultiplier: 0.8,
-        rewardMultiplier: 1.0,
+        rewardMultiplier: 0.8,
         waveIntensityMultiplier: 0.7
       },
       {
@@ -741,11 +741,11 @@ export class MenuManager {
         name: 'Well-Done', 
         description: 'Balanced challenge for experienced toaster operators.',
         color: '#ffb347',
-        startingCoins: 150,
-        startingLives: 75,
+        startingCoins: 300,
+        startingLives: 100,
         enemyHealthMultiplier: 1.0,
         enemySpeedMultiplier: 1.0,
-        rewardMultiplier: 1.2,
+        rewardMultiplier: 1.0,
         waveIntensityMultiplier: 1.0
       },
       {
@@ -753,11 +753,11 @@ export class MenuManager {
         name: 'Burnt Toast',
         description: 'High stakes! Enemies are tougher and more numerous.',
         color: '#ff6b6b',
-        startingCoins: 100,
-        startingLives: 50,
+        startingCoins: 200,
+        startingLives: 75,
         enemyHealthMultiplier: 1.3,
         enemySpeedMultiplier: 1.2,
-        rewardMultiplier: 1.5,
+        rewardMultiplier: 1.6,
         waveIntensityMultiplier: 1.4
       },
       {
@@ -765,11 +765,11 @@ export class MenuManager {
         name: 'Kitchen Nightmare',
         description: 'For true masters only. Overwhelming odds, maximum rewards.',
         color: '#a855f7',
-        startingCoins: 75,
-        startingLives: 25,
+        startingCoins: 150,
+        startingLives: 50,
         enemyHealthMultiplier: 1.8,
         enemySpeedMultiplier: 1.5,
-        rewardMultiplier: 2.0,
+        rewardMultiplier: 2.2,
         waveIntensityMultiplier: 2.0
       }
     ];
