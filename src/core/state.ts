@@ -8,6 +8,7 @@ export function createInitialState(w,h){
     waveQueue:[], spawnTimer:0, betweenWaves:true, waveInProgress:false, idSeq:1,
     // Simple auto-wave timer
     autoWaveTimer: 3,
-    toasters:[], texts:[]
+    toasters:[], texts:[],
+    currentLevel: null
   };
 }

@@ -1,15 +1,22 @@
 // @ts-nocheck
-import { waypoints } from "../../maps";
+import { waypoints } from "../../maps"; // legacy fallback
 import { addScreenShake } from "../../../systems/effects";
 import { rollPowerupDrop } from "../../../systems/powerups";
 import { spawnExplosion, spawnDamageNumber } from "../../../systems/particles";
 import { recordEnemyKilled, recordCoinsEarned } from "../../../systems/achievements";
 export const breads=[];
-export function spawnBread(spec){ 
+export function spawnBread(spec, state){ 
+  const level = state?.currentLevel;
+  let path = level ? level.paths[0] : null; // default
+  if (level && spec.pathId) {
+    const alt = level.paths.find(p=>p.id===spec.pathId);
+    if (alt) path = alt;
+  }
+  const startWp = path ? path.waypoints[0] : waypoints[0];
   const size = spec.size === 'large' ? 20 : 12;
   const e={
     id:++_id, type:spec.type, hp:spec.hp, maxHp:spec.hp, speed:spec.speed, 
-    bounty:spec.bounty, wpt:0, x:waypoints[0].x, y:waypoints[0].y, r:size, 
+    bounty:spec.bounty, wpt:0, pathId: path? path.id : 'legacy', x:startWp.x, y:startWp.y, r:size, 
     alive:true, special:spec.special||null, armor:spec.armor||0,
     lastSpeedBurst: 0, regenerateTimer: 0,
     resistances: spec.resistances || {}
@@ -97,7 +104,12 @@ export function stepBreads(dt, state){
       }
     }
     
-    const target=waypoints[e.wpt+1];
+    let wpArray = waypoints; // fallback
+    if (state.currentLevel) {
+      const p = state.currentLevel.paths.find(p=>p.id===e.pathId) || state.currentLevel.paths[0];
+      wpArray = p.waypoints;
+    }
+    const target=wpArray[e.wpt+1];
     if(!target){ 
       e.alive=false; 
       // Bosses cause extra damage when they reach the end

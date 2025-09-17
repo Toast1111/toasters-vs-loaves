@@ -2,7 +2,7 @@
 import { createInitialState } from "./state";
 import { drawScene } from "../rendering/render";
 import { buildWave } from "../content/waves";
-import { isBuildable, waypoints } from "../content/maps";
+import { isBuildable, waypoints, getLevel, isBuildableOnLevel } from "../content/maps";
 import { fireFrom, projectiles, stepProjectiles } from "../systems/projectiles";
 import { spawnCrumbs, particles, stepParticles, spawnMuzzleFlash, spawnExplosion } from "../systems/particles";
 import { TOWER_TYPES, getTowerBase, canUpgrade } from "../content/entities/towers";
@@ -15,7 +15,12 @@ import { UI } from "../ui/game";
 
 export class Game{
   canvas; ctx; state; mouse={x:-999,y:-999}; last=performance.now();
-  constructor(canvas, ctx){ this.canvas=canvas; this.ctx=ctx; this.state=createInitialState(canvas.width, canvas.height); }
+  constructor(canvas, ctx, levelId){ 
+    this.canvas=canvas; this.ctx=ctx; 
+    this.state=createInitialState(canvas.width, canvas.height); 
+    // Attach level definition (fallback training_kitchen)
+    this.state.currentLevel = getLevel(levelId || 'training_kitchen');
+  }
   init(){
     UI.bind(this);
     loadStats(); // Load saved achievements and stats
@@ -66,7 +71,8 @@ export class Game{
   }
   stepTime(now){ const dt=Math.min(0.033,(now-this.last)/1000); this.last=now; return dt; }
   tryPlaceTower(x,y,multi=false){
-  if(!isBuildable(x,y)){ UI.float(this, x,y,'Not on loaf path!',true); return; }
+  const buildable = this.state.currentLevel ? isBuildableOnLevel(this.state.currentLevel, x, y) : isBuildable(x,y);
+  if(!buildable){ UI.float(this, x,y,'Not on loaf path!',true); return; }
     const type=this.state.placing; if(!type) return;
   if(this.state.coins<type.cost){ UI.float(this,x,y,'Not enough coins',true); return; }
   for(const t of this.state.toasters){ if(Math.hypot(x-t.x,y-t.y)<36){ UI.float(this,x,y,'Too close to another toaster',true); return; } }
@@ -172,14 +178,23 @@ export class Game{
   getSelected(){ return this.state.toasters.find(t=>t.id===this.state.selected); }
   startWave(){
     if(this.state.waveInProgress) return; this.state.wave++; UI.sync(this); UI.log(`Wave ${this.state.wave} begins!`);
-    this.state.waveQueue=buildWave(this.state.wave);
+    const level = this.state.currentLevel;
+    if (this.state.wave % 10 === 0) {
+      this.state.waveQueue = buildBossWave(this.state.wave, level);
+    } else {
+      this.state.waveQueue = buildWave(this.state.wave, level);
+    }
     this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
   }
   update(dt){
     // spawn
     if(this.state.waveInProgress){
       this.state.spawnTimer-=dt;
-      if(this.state.spawnTimer<=0 && this.state.waveQueue.length){ spawnBread(this.state.waveQueue.shift()); this.state.spawnTimer=0.45; }
+        if(this.state.spawnTimer<=0 && this.state.waveQueue.length){ 
+          const nextSpec = this.state.waveQueue.shift();
+          spawnBread(nextSpec, this.state); 
+          this.state.spawnTimer=0.45; 
+        }
       if(!this.state.waveQueue.length && breads.every(b=>!b.alive)){
   this.state.waveInProgress=false; this.state.betweenWaves=true;
   this.state.ap+=1; this.state.coins+=50+this.state.wave*10; UI.sync(this);
@@ -340,4 +355,12 @@ export class Game{
     }
   }
   draw(){ drawScene(this.ctx, this.state, this); }
+
+  static cleanupGlobals(){
+    try { require('../content/entities/breads/breads').breads.length=0; } catch {}
+    try { require('../systems/projectiles/projectiles').projectiles.length=0; } catch {}
+    try { const m=require('../systems/particles/particles'); m.particles.length=0; m.damageNumbers.length=0; } catch {}
+    try { require('../systems/effects/effects').heatZones.length=0; } catch {}
+    try { const m=require('../systems/powerups/powerups'); m.powerups.length=0; m.activePowerups.length=0; } catch {}
+  }
 }

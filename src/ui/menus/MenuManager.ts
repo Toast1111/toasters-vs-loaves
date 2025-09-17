@@ -422,13 +422,14 @@ export class MenuManager {
     const exitBtn = document.getElementById('exitGameBtn');
     if (exitBtn) {
       exitBtn.style.display = 'block';
-      exitBtn.onclick = () => this.exitGame();
+      exitBtn.onclick = () => this.showExitConfirm();
     }
     
     // Import and initialize game dynamically
     import('../../core/Game').then(({ Game }) => {
       const ctx = this.canvas.getContext('2d');
-      this.gameInstance = new Game(this.canvas, ctx);
+      const levelId = (gameData && gameData.map && gameData.map.id) || 'training_kitchen';
+      this.gameInstance = new Game(this.canvas, ctx, levelId);
       
       // Configure game with map and difficulty data
       if (gameData) {
@@ -458,6 +459,25 @@ export class MenuManager {
   }
 
   exitGame() {
+    // Perform deep cleanup of current game instance and global registries
+    if (this.gameInstance) {
+      try {
+        // Clear global arrays imported by subsystems
+        // Dynamically import to avoid retaining references earlier
+        import('../../content/entities/breads/breads').then(mod => { if (mod.breads) mod.breads.length = 0; });
+        import('../../systems/projectiles/projectiles').then(mod => { if (mod.projectiles) mod.projectiles.length = 0; });
+        import('../../systems/particles/particles').then(mod => { if (mod.particles) mod.particles.length = 0; if (mod.damageNumbers) mod.damageNumbers.length = 0; });
+        import('../../systems/effects/effects').then(mod => { if (mod.heatZones) mod.heatZones.length = 0; });
+        import('../../systems/powerups/powerups').then(mod => { if (mod.powerups) mod.powerups.length = 0; if (mod.activePowerups) mod.activePowerups.length = 0; });
+      } catch (e) {
+        console.warn('Cleanup error:', e);
+      }
+      // Clear canvas so last frame isn't visible behind menus
+      try {
+        const ctx = this.canvas.getContext('2d');
+        ctx && ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+      } catch {}
+    }
     this.gameInstance = null;
     
     // Hide exit button
@@ -469,6 +489,29 @@ export class MenuManager {
     if (sidebar) sidebar.style.display = 'none';
     
     this.transition(GameState.KITCHEN_HQ);
+  }
+
+  private showExitConfirm() {
+    // Prevent stacking multiple modals
+    if (document.getElementById('confirmExitModal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'confirmExitModal';
+    modal.style.cssText = `
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 1200; animation: modalFadeIn 0.2s ease;
+    `;
+    modal.innerHTML = `
+      <div style="background: var(--panel); border:1px solid #29293f; border-radius:16px; width:90%; max-width:420px; padding:28px; box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+        <h2 style="margin:0 0 10px;font-size:22px;color:var(--accent);font-weight:800;">Return to Kitchen HQ?</h2>
+        <p style="margin:0 0 18px;line-height:1.4;color:var(--muted);font-size:14px;">Leaving now will end this run. All towers, waves, and temporary effects will be lost. Persistent unlocks & achievements are already saved.</p>
+        <div style="display:flex; gap:12px; justify-content:flex-end;">
+          <button id="cancelExit" class="menu-btn" style="background:var(--panel2);border:1px solid #2d2d45;">Cancel</button>
+          <button id="confirmExit" class="menu-btn primary" style="background:linear-gradient(135deg,var(--bad),#ff5555);color:#fff;border:none;">Yes, Exit</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    (modal.querySelector('#cancelExit') as HTMLElement).onclick = () => modal.remove();
+    (modal.querySelector('#confirmExit') as HTMLElement).onclick = () => { modal.remove(); this.exitGame(); };
   }
 
   private showPauseMenu() {
@@ -528,6 +571,26 @@ export class MenuManager {
         layout: 'Multiple winding paths with limited counter space',
         unlocked: true,
         specialFeatures: ['Multiple paths', 'Strategic chokepoints'],
+        bestWave: {}
+      },
+      {
+        id: 'dual_lanes',
+        name: 'Dual Lanes Kitchen',
+        description: 'Two simultaneous lanes requiring split defenses',
+        theme: '🛣️',
+        layout: 'Parallel lanes that converge near the exit',
+        unlocked: true,
+        specialFeatures: ['Multi-path', 'Weighted spawns', 'Converging end'],
+        bestWave: {}
+      },
+      {
+        id: 'tri_split_test',
+        name: 'Tri-Split Test',
+        description: 'Three-way divergence to stress-test path logic',
+        theme: '🔱',
+        layout: 'Three lanes with varied curvature converging late',
+        unlocked: true,
+        specialFeatures: ['Triple path', 'Weighted center bias', 'Distribution test'],
         bestWave: {}
       },
       {

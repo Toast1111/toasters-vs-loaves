@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { isPath, waypoints, grid, isBuildable } from "../content/maps";
+import { isPath, waypoints, grid, isBuildable } from "../content/maps"; // legacy
 import { breads } from "../content/entities/breads";
 import { projectiles } from "../systems/projectiles";
 import { particles, damageNumbers } from "../systems/particles";
@@ -29,7 +29,23 @@ export function drawScene(ctx, state, game){
       ctx.fillRect(x,y,grid.cw-1,grid.ch-1);
     }
   }
-  ctx.strokeStyle="#2a3246"; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(waypoints[0].x,waypoints[0].y); for(let i=1;i<waypoints.length;i++){ const p=waypoints[i]; ctx.lineTo(p.x,p.y); } ctx.stroke();
+  const level = state.currentLevel;
+  if (level && level.paths) {
+    ctx.lineWidth=8;
+    const colors = ["#2a3246", "#36425a", "#45546f", "#566684"]; // cycle colors
+    let ci = 0;
+    for (const path of level.paths) {
+      ctx.strokeStyle = colors[ci++ % colors.length];
+      const wps = path.waypoints;
+      if (!wps.length) continue;
+      ctx.beginPath(); ctx.moveTo(wps[0].x, wps[0].y);
+      for (let i=1;i<wps.length;i++){ const p=wps[i]; ctx.lineTo(p.x,p.y); }
+      ctx.stroke();
+    }
+  } else {
+    // fallback legacy
+    ctx.strokeStyle="#2a3246"; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(waypoints[0].x,waypoints[0].y); for(let i=1;i<waypoints.length;i++){ const p=waypoints[i]; ctx.lineTo(p.x,p.y); } ctx.stroke();
+  }
   for(const e of breads){ 
     if(!e.alive) continue; 
     const hp=e.hp/e.maxHp; 

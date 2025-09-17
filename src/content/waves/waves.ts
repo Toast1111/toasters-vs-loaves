@@ -1,5 +1,5 @@
 // @ts-nocheck
-export function buildWave(n){
+export function buildWave(n, level){
   const wave=[]; 
   
   // Boss waves every 10 levels
@@ -134,10 +134,20 @@ export function buildWave(n){
   }
   
   for(let i=wave.length-1;i>0;i--){ const j=(Math.random()* (i+1))|0; [wave[i],wave[j]]=[wave[j],wave[i]]; }
+  // If level has multiple paths, assign pathId in a round-robin fashion
+  if (level && level.paths && level.paths.length > 1) {
+    const totalWeight = level.paths.reduce((s,p)=>s+(p.weight||1),0);
+    const pickPath = () => {
+      let r = Math.random() * totalWeight;
+      for (const p of level.paths){ r -= (p.weight||1); if (r <= 0) return p.id; }
+      return level.paths[0].id;
+    };
+    for (const enemy of wave) enemy.pathId = pickPath();
+  }
   return wave;
 }
 
-export function buildBossWave(n) {
+export function buildBossWave(n, level) {
   const wave = [];
   const bossLevel = Math.floor(n / 10);
   
@@ -181,5 +191,18 @@ export function buildBossWave(n) {
     });
   }
   
+  if (level && level.paths && level.paths.length > 1) {
+    const totalWeight = level.paths.reduce((s,p)=>s+(p.weight||1),0);
+    const pickPath = () => {
+      let r = Math.random() * totalWeight;
+      for (const p of level.paths){ r -= (p.weight||1); if (r <= 0) return p.id; }
+      return level.paths[0].id;
+    };
+    // Boss stays on heaviest path for clarity; escorts weighted
+    const sorted = [...level.paths].sort((a,b)=>(b.weight||1)-(a.weight||1));
+    const boss = wave[wave.length-1];
+    if (boss) boss.pathId = sorted[0].id;
+    for (let i=0;i<wave.length-1;i++) wave[i].pathId = pickPath();
+  }
   return wave;
 }
