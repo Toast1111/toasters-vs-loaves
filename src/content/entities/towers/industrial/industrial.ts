@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { roundedRect } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { roundedRect } from '../../../../rendering/drawUtils';
 
 const industrial = {
   key:'industrial', name:'Industrial Toaster', cost:580, rarity:RARITY.LEGENDARY,

@@ -2,14 +2,14 @@
 // Aggregates all tower definitions and exposes helpers and constraints
 export { RARITY } from './shared';
 
-import basic from './basic';
-import wide from './wide';
-import oven from './oven';
-import microwave from './microwave';
+import basic from './basic/basic';
+import wide from './wide/wide';
+import oven from './oven/oven';
+import microwave from './microwave/microwave';
 import airfryer from './airfryer/airfryer';
-import convection from './convection';
-import industrial from './industrial';
-import chef from './chef';
+import convection from './convection/convection';
+import industrial from './industrial/industrial';
+import chef from './chef/chef';
 
 export const TOWER_TYPES = [
   basic, wide, oven, microwave, airfryer, convection, industrial, chef

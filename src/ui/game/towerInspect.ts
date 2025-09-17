@@ -54,10 +54,20 @@ export const TowerInspectUI = {
    * Build the tower stats display
    */
   buildStatsDisplay(tower: any): string {
+    let energyDisplay = '';
+    if(tower.radiationCapacity) {
+      if(tower.isReloading) {
+        const reloadPercent = Math.round((tower.reloadProgress / tower.reloadTime) * 100);
+        energyDisplay = ` | Energy: RELOADING (${reloadPercent}%)`;
+      } else {
+        energyDisplay = ` | Energy: ${Math.floor(tower.radiationCurrent)}/${tower.radiationCapacity}`;
+      }
+    }
+    
     return `
       <div class="row"><b>${tower.name}</b><span class="small">ID ${tower.id}</span></div>
       <div class="keyline"></div>
-      <div class="small">Range: ${tower.range.toFixed(0)} | Dmg: ${tower.damage.toFixed(0)} | Fire/s: ${tower.fireRate.toFixed(2)}${tower.pierce ? ` | Pierce: ${tower.pierce}` : ''}${tower.splash ? ` | Splash: ${tower.splash}` : ''}</div>
+      <div class="small">Range: ${tower.range.toFixed(0)} | Dmg: ${tower.damage.toFixed(0)} | Fire/s: ${tower.fireRate.toFixed(2)}${tower.pierce ? ` | Pierce: ${tower.pierce}` : ''}${tower.splash ? ` | Splash: ${tower.splash}` : ''}${energyDisplay}</div>
       <div class="keyline"></div>
     `;
   },

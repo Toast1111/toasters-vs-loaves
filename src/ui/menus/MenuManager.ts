@@ -652,11 +652,11 @@ export class MenuManager {
       {
         id: 'breakfast_diner',
         name: 'Breakfast Diner',
-        description: 'Busy diner with multiple service paths and tight spaces',
+        description: 'Two intersecting service paths that weave together and converge at the exit',
         theme: '🍳',
-        layout: 'Multiple winding paths with limited counter space',
+        layout: 'Intersecting paths with multiple crossover points, converging exit',
         unlocked: true,
-        specialFeatures: ['Multiple paths', 'Strategic chokepoints'],
+        specialFeatures: ['Intersecting paths', 'Multiple crossovers', 'Converging exit'],
         bestWave: {}
       },
       {

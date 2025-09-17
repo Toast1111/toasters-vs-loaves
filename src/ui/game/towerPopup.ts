@@ -137,6 +137,12 @@ export const TowerPopupUI = {
           <span class="stat-value">${tower.splash}</span>
         </div>
         ` : ''}
+        ${tower.radiationCapacity ? `
+        <div class="stat-row">
+          <span class="stat-label">Energy:</span>
+          <span class="stat-value">${tower.isReloading ? `RELOADING (${Math.round((tower.reloadProgress / tower.reloadTime) * 100)}%)` : `${Math.floor(tower.radiationCurrent)}/${tower.radiationCapacity}`}</span>
+        </div>
+        ` : ''}
       </div>
     `;
   },

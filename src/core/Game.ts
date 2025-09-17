@@ -96,6 +96,14 @@ export class Game{
       projectileSpeed:type.base.projectileSpeed||300,
       splash:type.base.splash||0, splashDmg:type.base.splashDmg||0,
       pierce:(type.base.pierce||0)+this.state.global.pierce,
+      // Radiation system for microwave towers
+      radiationCapacity:type.base.radiationCapacity||null,
+      radiationCurrent:type.base.radiationCapacity||null, // Start at full capacity
+      radiationRegenRate:type.base.radiationRegenRate||null,
+      reloadTime:type.base.reloadTime||null,
+      isReloading:false,
+      reloadProgress:0,
+      lastRadiationRegen:Date.now(),
       // New upgrade path system
       upgradeTiers:[0,0,0], // [path0, path1, path2] - tracks tier for each path
       cooldown:0, sold:false,
@@ -218,6 +226,20 @@ export class Game{
       for(const t of this.state.toasters){
         t.cooldown-=dt; if(t.cooldown<0) t.cooldown=0;
         
+        // Handle radiation system for microwave towers
+        if(t.radiationCapacity !== null && t.reloadTime !== null) {
+          if(t.isReloading) {
+            // Tower is reloading
+            t.reloadProgress += dt;
+            if(t.reloadProgress >= t.reloadTime) {
+              // Reload complete
+              t.radiationCurrent = t.radiationCapacity;
+              t.isReloading = false;
+              t.reloadProgress = 0;
+            }
+          }
+        }
+        
         // Reset adaptive bonuses
         t._tempDamage = t.damage;
         t._tempFireRate = t.fireRate;
@@ -296,8 +318,34 @@ export class Game{
           }
         }
         if(!suppressNormalShot && target && t.cooldown === 0){ 
+          // Check radiation capacity for microwave towers
+          const energyRequired = t.energyPerShot || 1;
+          if(t.radiationCapacity !== null) {
+            if(t.isReloading) {
+              // Tower is currently reloading, cannot shoot
+              continue;
+            }
+            if(t.radiationCurrent < energyRequired) {
+              // Not enough energy to shoot, start reloading
+              if(!t.isReloading) {
+                t.isReloading = true;
+                t.reloadProgress = 0;
+              }
+              continue;
+            }
+          }
+          
           // Calculate actual damage with critical hits
           let actualDamage = t._tempDamage || t.damage;
+          
+          // Gamma Burst upgrade: first shot after full recharge does extra damage
+          let isGammaBurst = false;
+          if(t.gammaBurst && t.radiationCurrent === t.radiationCapacity) {
+            actualDamage *= t.gammaMultiplier || 3.0;
+            isGammaBurst = true;
+            UI.float(this, target.x, target.y, 'GAMMA BURST!', false);
+          }
+          
           let wasCrit = false;
           if(t.critChance && Math.random() < t.critChance) {
             actualDamage *= (t.critMultiplier || 2.0);
@@ -329,6 +377,57 @@ export class Game{
             spawnMuzzleFlash(t.x, t.y, angle);
             fireFrom(t, target, actualDamage); 
             
+            // Chain lightning for Gamma Burst
+            if(isGammaBurst && t.chainLightning) {
+              // Mark the projectile for chain lightning processing
+              const projectileId = projectiles[projectiles.length - 1]?.id;
+              if(projectileId) {
+                const proj = projectiles[projectiles.length - 1];
+                proj.chainLightning = true;
+                proj.chainCount = t.chainCount || 8;
+                proj.chainStunDuration = t.chainStunDuration || 2.0;
+                proj.chainDamage = actualDamage;
+                proj.chainHitEnemies = []; // Track which enemies have been hit by the chain
+              }
+            }
+            
+            // Dualwave Mode - Independent targeting
+            if(t.dualWave && t.independentTargeting) {
+              // Find a second target different from the first
+              let secondTarget = null;
+              let bestScore = Infinity;
+              for(const e of breads) {
+                if(!e.alive || e === target) continue;
+                const d = Math.hypot(e.x - t.x, e.y - t.y);
+                if(d <= t.range) {
+                  const score = (1000 - e.wpt * 50) + d * 0.1;
+                  if(score < bestScore) {
+                    bestScore = score;
+                    secondTarget = e;
+                  }
+                }
+              }
+              
+              if(secondTarget) {
+                const angle2 = Math.atan2(secondTarget.y - t.y, secondTarget.x - t.x);
+                spawnMuzzleFlash(t.x, t.y, angle2);
+                fireFrom(t, secondTarget, actualDamage);
+                
+                // Apply chain lightning to second projectile too if it's a gamma burst
+                if(isGammaBurst && t.chainLightning) {
+                  const projectileId2 = projectiles[projectiles.length - 1]?.id;
+                  if(projectileId2) {
+                    const proj2 = projectiles[projectiles.length - 1];
+                    proj2.chainLightning = true;
+                    proj2.chainCount = t.chainCount || 8;
+                    proj2.chainStunDuration = t.chainStunDuration || 2.0;
+                    proj2.chainDamage = actualDamage;
+                    proj2.chainHitEnemies = []; // Track which enemies have been hit by the chain
+                  }
+                }
+              }
+            }
+            
             // Double shot upgrade
             if(t.doubleShot && Math.random() < t.doubleShot) {
               // Small delay for second shot
@@ -343,6 +442,22 @@ export class Game{
           
           const effectiveFireRate = t._tempFireRate || t.fireRate;
           t.cooldown = Math.max(0.02, 1/effectiveFireRate); 
+          
+          // Consume radiation energy for microwave towers
+          if(t.radiationCapacity !== null) {
+            if(t.drainsAllAmmo) {
+              t.radiationCurrent = 0; // Radiation Lance drains all ammo
+            } else {
+              t.radiationCurrent -= energyRequired;
+            }
+            
+            // Start reloading if energy is depleted
+            if(t.radiationCurrent <= 0) {
+              t.radiationCurrent = 0;
+              t.isReloading = true;
+              t.reloadProgress = 0;
+            }
+          } 
         }
       }
     }

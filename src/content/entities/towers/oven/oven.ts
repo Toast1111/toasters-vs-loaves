@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { drawDefaultToaster } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { drawDefaultToaster } from '../../../../rendering/drawUtils';
 
 const oven = {
   key:'oven', name:'Mini Oven', cost:220, rarity:RARITY.RARE,

@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { drawDefaultToaster } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { drawDefaultToaster } from '../../../../rendering/drawUtils';
 
 const wide = {
   key:'wide', name:'4‑Slot Toaster', cost:160, rarity:RARITY.RARE,

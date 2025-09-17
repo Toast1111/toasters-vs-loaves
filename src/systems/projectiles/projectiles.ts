@@ -171,6 +171,11 @@ export function stepProjectiles(dt, state){
             applyStun(e, p.stunDuration);
           }
           
+          // Chain Lightning effect
+          if(p.chainLightning && p.chainCount > 0) {
+            performChainLightning(p, e, state);
+          }
+          
           // Splash damage
           if(p.splash>0){ 
             for(const e2 of breads){ 
@@ -237,5 +242,67 @@ function applySlow(enemy, amount) {
 }
 
 function applyStun(enemy, duration) {
+  enemy.stunned = true;
   enemy.stunDuration = Math.max(enemy.stunDuration || 0, duration);
+}
+
+// Chain Lightning function
+function performChainLightning(projectile, firstEnemy, state) {
+  if(!projectile.chainHitEnemies) {
+    projectile.chainHitEnemies = [];
+  }
+  
+  // Add the first enemy to the hit list
+  projectile.chainHitEnemies.push(firstEnemy.id);
+  
+  // Apply stun to the first enemy
+  applyStun(firstEnemy, projectile.chainStunDuration);
+  
+  // Create visual lightning effect
+  import('../particles').then(({spawnLightning}) => {
+    if(spawnLightning) {
+      spawnLightning(projectile.x, projectile.y, firstEnemy.x, firstEnemy.y);
+    }
+  }).catch(() => {}); // Ignore if lightning effect doesn't exist
+  
+  let currentEnemy = firstEnemy;
+  let chainsRemaining = Math.min(projectile.chainCount - 1, 7); // -1 because we already hit the first enemy
+  
+  for(let i = 0; i < chainsRemaining; i++) {
+    // Find the closest enemy that hasn't been hit yet
+    let nextTarget = null;
+    let closestDist = Infinity;
+    const maxChainRange = 120; // Maximum distance for chain to jump
+    
+    for(const enemy of breads) {
+      if(!enemy.alive) continue;
+      if(projectile.chainHitEnemies.includes(enemy.id)) continue; // Skip already hit enemies
+      
+      const dist = Math.hypot(currentEnemy.x - enemy.x, currentEnemy.y - enemy.y);
+      if(dist < closestDist && dist <= maxChainRange) {
+        closestDist = dist;
+        nextTarget = enemy;
+      }
+    }
+    
+    if(!nextTarget) break; // No more valid targets within range
+    
+    // Damage and stun the next target
+    damageBread(nextTarget, projectile.chainDamage, state, 'lightning');
+    applyStun(nextTarget, projectile.chainStunDuration);
+    projectile.chainHitEnemies.push(nextTarget.id);
+    
+    // Create visual lightning effect between current and next enemy
+    import('../particles').then(({spawnLightning}) => {
+      if(spawnLightning) {
+        spawnLightning(currentEnemy.x, currentEnemy.y, nextTarget.x, nextTarget.y);
+      }
+    }).catch(() => {}); // Ignore if lightning effect doesn't exist
+    
+    currentEnemy = nextTarget;
+  }
+  
+  // Clear chain lightning properties after use
+  projectile.chainLightning = false;
+  projectile.chainCount = 0;
 }

@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { drawDefaultToaster } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { drawDefaultToaster } from '../../../../rendering/drawUtils';
 
 const basic = {
   key:'basic', name:'Counter Toaster', cost:100, rarity:RARITY.COMMON, 

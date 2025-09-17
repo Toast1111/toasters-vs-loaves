@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { roundedRect } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { roundedRect } from '../../../../rendering/drawUtils';
 
 const chef = {
   key:'chef', name:'Chef Special Toaster', cost:480, rarity:RARITY.LEGENDARY,

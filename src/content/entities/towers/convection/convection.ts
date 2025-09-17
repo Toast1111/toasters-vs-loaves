@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { RARITY } from './shared';
-import { roundedRect } from '../../../rendering/drawUtils';
+import { RARITY } from '../shared';
+import { roundedRect } from '../../../../rendering/drawUtils';
 
 const convection = {
   key:'convection', name:'Convection Oven', cost:420, rarity:RARITY.EPIC,

@@ -3,12 +3,14 @@ export * from './types';
 import { trainingKitchen } from './levels.trainingKitchen';
 import { dualLanes } from './levels.dualLanes';
 import { triSplitTest } from './levels.triSplitTest';
+import { breakfastDiner } from './levels.breakfastDiner';
 export * from './helpers';
 
 export const LEVELS = {
 	[trainingKitchen.id]: trainingKitchen,
 	[dualLanes.id]: dualLanes,
-	[triSplitTest.id]: triSplitTest
+	[triSplitTest.id]: triSplitTest,
+	[breakfastDiner.id]: breakfastDiner
 };
 
 export function getLevel(id: string){
