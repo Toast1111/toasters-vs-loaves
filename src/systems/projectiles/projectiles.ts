@@ -37,7 +37,7 @@ export function fireFrom(t, target, customDamage = null){
   p.pierce = t.pierce || 0;
   p.splash = t.splash || 0;
   p.splashDmg = t.splashDmg || 0;
-  p.life = t.unlimitedRange ? 2 : (t._projectileLifetime || (t.range / speed));
+  p.life = t.unlimitedRange ? 10 : (t._projectileLifetime || (t.range / speed));
   p.damageType = t.damageType || 'physical';
   p.splashType = t.splashType || 'explosion';
   // Special upgrade effects

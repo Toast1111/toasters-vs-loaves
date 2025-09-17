@@ -24,7 +24,9 @@ export function stepEffects(dt, state) {
       const dist = Math.hypot(bread.x - zone.x, bread.y - zone.y);
       if (dist <= zone.radius) {
         bread.hp -= zone.damage * dt;
-        bread.speed *= 0.7; // Slow effect
+        // Apply temporary slow effect instead of permanently modifying speed
+        bread._heatZoneSlow = true;
+        bread._slowMultiplier = 0.7; // Slow effect
         if (bread.hp <= 0) {
           bread.alive = false;
           const bonus = Math.round(bread.bounty * state.global.bounty);
@@ -40,6 +42,23 @@ export function stepEffects(dt, state) {
   // Clean up dead zones
   for (let i = heatZones.length - 1; i >= 0; i--) {
     if (heatZones[i].dead) heatZones.splice(i, 1);
+  }
+  
+  // Clear heat zone effects for breads no longer in any zone
+  for (const bread of state.breads || []) {
+    if (!bread.alive) continue;
+    let inAnyZone = false;
+    for (const zone of heatZones) {
+      const dist = Math.hypot(bread.x - zone.x, bread.y - zone.y);
+      if (dist <= zone.radius) {
+        inAnyZone = true;
+        break;
+      }
+    }
+    if (!inAnyZone) {
+      bread._heatZoneSlow = false;
+      bread._slowMultiplier = 1.0;
+    }
   }
   
   // Update screen shake

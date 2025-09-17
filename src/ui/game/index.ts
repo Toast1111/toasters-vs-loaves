@@ -79,7 +79,7 @@ export const UI = {
     if (sellBtn) {
       const selected = game.getSelected();
       if (selected) {
-        const sellValue = Math.floor(selected.totalCost * 0.8);
+        const sellValue = Math.floor(game.getTowerCost(selected) * 0.8);
         sellBtn.textContent = `Sell for ${sellValue}c`;
         sellBtn.disabled = false;
       } else {

@@ -23,7 +23,7 @@
     .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#222;font-weight:700;border:none}
     .btn.small{font-size:12px;padding:6px 10px}
     .btn:disabled{opacity:.5;cursor:not-allowed}
-    .side{background:var(--panel);border:1px solid #29293f;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+    .side{background:var(--panel);border:1px solid #29293f;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;overflow:auto;-webkit-overflow-scrolling:touch}
     
     /* Sell button and range toggle styling */
     .sell-btn{background:linear-gradient(135deg,var(--bad),#ff5555);color:white;font-weight:600;padding:8px 16px;border:none;border-radius:8px;transition:all 0.2s ease}
@@ -430,13 +430,24 @@
     }
 
     /* Responsive adjustments */
-    @media (max-width: 1180px) {
+    /* Allow sidebar for iPad-sized screens and larger */
+    @media (max-width: 768px) {
       .wrap:not(.menu-mode){
-        grid-template-columns: 1fr; /* collapse sidebar under canvas for medium widths */
+        grid-template-columns: 1fr; /* collapse sidebar under canvas for smaller screens */
         grid-auto-rows: auto;
       }
       aside.side { order: 2; }
       #gamePanel { order: 1; }
+    }
+    
+    /* For medium screens (iPad portrait), make sidebar smaller to fit better */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .wrap:not(.menu-mode){
+        grid-template-columns: 1fr 200px; /* slightly smaller sidebar for medium screens */
+      }
+      .side {
+        font-size: 0.9em; /* slightly smaller text */
+      }
     }
     @media (max-width: 900px), (max-height: 640px) {
       .level-content, .map-content { padding-top: 32px; }
@@ -928,7 +939,7 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-BGe1pHLE.js"></script>
+  <script type="module" crossorigin src="/toasters-vs-loaves/assets/index-DKOcyIQ8.js"></script>
 </head>
 <body>
   <div class="wrap menu-mode">

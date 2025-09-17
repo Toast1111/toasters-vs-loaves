@@ -4,7 +4,7 @@ export function buildWave(n, level){
   
   // Boss waves every 10 levels
   if (n % 10 === 0) {
-    return buildBossWave(n);
+    return buildBossWave(n, level);
   }
   
   const base=15+Math.floor(n*1.5);

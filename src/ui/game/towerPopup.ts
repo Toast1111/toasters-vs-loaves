@@ -256,8 +256,8 @@ export const TowerPopupUI = {
    */
   updateSellButton(tower: any) {
     const sellBtn = document.getElementById('popupSellBtn');
-    if (sellBtn) {
-      const sellValue = Math.floor(tower.totalCost * 0.8);
+    if (sellBtn && this.game) {
+      const sellValue = Math.floor(this.game.getTowerCost(tower) * 0.8);
       sellBtn.textContent = `Sell for ${sellValue}c`;
     }
   },

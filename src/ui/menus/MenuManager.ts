@@ -437,6 +437,11 @@ export class MenuManager {
     
     // Import and initialize game dynamically
     import('../../core/Game').then(({ Game }) => {
+      // Clean up any existing game instance and its global state
+      if (this.gameInstance) {
+        Game.cleanupGlobals();
+      }
+      
       const ctx = this.canvas.getContext('2d');
       const levelId = (gameData && gameData.map && gameData.map.id) || 'training_kitchen';
       this.gameInstance = new Game(this.canvas, ctx, levelId);
@@ -449,6 +454,10 @@ export class MenuManager {
         this.gameInstance.state.currentDifficulty = gameData.difficulty;
         this.gameInstance.state.infiniteMode = true;
         this.gameInstance.state.currentWave = 0;
+        // Reset wave counter and ensure clean state
+        this.gameInstance.state.wave = 0;
+        this.gameInstance.state.betweenWaves = true;
+        this.gameInstance.state.waveInProgress = false;
       }
       
       this.gameInstance.init();

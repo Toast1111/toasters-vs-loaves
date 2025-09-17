@@ -19,7 +19,10 @@ export function spawnBread(spec, state){
     bounty:spec.bounty, wpt:0, pathId: path? path.id : 'legacy', x:startWp.x, y:startWp.y, r:size, 
     alive:true, special:spec.special||null, armor:spec.armor||0,
     lastSpeedBurst: 0, regenerateTimer: 0,
-    resistances: spec.resistances || {}
+    resistances: spec.resistances || {},
+    // Initialize heat zone effect variables
+    _heatZoneSlow: false,
+    _slowMultiplier: 1.0
   }; 
   breads.push(e); 
 }
@@ -32,6 +35,11 @@ export function stepBreads(dt, state){
     
     // Handle status effects from new upgrade system
     let speedMultiplier = 1;
+    
+    // Apply heat zone slow effect
+    if (e._heatZoneSlow && e._slowMultiplier) {
+      speedMultiplier *= e._slowMultiplier;
+    }
     
     // Burn damage over time
     if(e.burnDuration > 0) {
@@ -115,8 +123,11 @@ export function stepBreads(dt, state){
       // Bosses cause extra damage when they reach the end
       if (!state._invulnerable) {
         const damage = e.r > 15 ? 5 : 1;
-        state.lives -= damage; 
-        document.getElementById('lives').textContent=state.lives; 
+        state.lives -= damage;
+        // Clamp lives to prevent excessive negative values that could cause UI issues
+        state.lives = Math.max(state.lives, -10); // Allow some negative for game over detection but prevent extreme negatives
+        // Let the UI system handle the update instead of direct DOM manipulation
+        // document.getElementById('lives').textContent=state.lives; 
         if(state.lives<=0) { state.running=false; } 
       }
       continue; 
@@ -139,15 +150,12 @@ const SPLIT_PATTERNS = {
 export function damageBread(e, dmg, state, damageType = 'physical'){
   // Calculate base damage after armor (including temporary explosion armor)
   const totalArmor = (e.armor || 0) + (e.explosionArmor || 0);
-  let actualDamage = dmg * (1 - totalArmor);
+  let actualDamage = dmg * Math.max(0.05, 1 - totalArmor); // Minimum 5% damage gets through armor
   
   // Apply damage type resistances/vulnerabilities
   if (e.resistances && e.resistances[damageType] !== undefined) {
-    actualDamage *= (1 - e.resistances[damageType]);
+    actualDamage *= Math.max(0.05, 1 - e.resistances[damageType]); // Minimum 5% damage gets through resistance
   }
-  
-  // Ensure minimum damage (can't be completely immune)
-  actualDamage = Math.max(actualDamage, dmg * 0.05);
   
   e.hp -= actualDamage; 
   

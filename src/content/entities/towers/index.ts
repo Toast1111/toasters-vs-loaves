@@ -27,8 +27,10 @@ export function canUpgrade(tower, pathIndex, currentTier) {
   const nextTier = currentTier + 1;
   if (nextTier > UPGRADE_CONSTRAINTS.maxTiers) return false;
   if (nextTier >= 3) {
+    // Count how many paths are already at tier 3+
     const pathsAt3Plus = tower.upgradeTiers.filter(tier => tier >= 3).length;
     const thisPathAt3Plus = tower.upgradeTiers[pathIndex] >= 3;
+    // Allow upgrade if: this path is already at 3+ OR no other paths are at 3+
     return thisPathAt3Plus || pathsAt3Plus === 0;
   }
   return true;

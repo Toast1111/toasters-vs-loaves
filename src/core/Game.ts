@@ -133,6 +133,9 @@ export class Game{
     // Skip caching if tower has unlimited range upgrade
     if (!tower.unlimitedRange) {
       tower._projectileLifetime = tower.range / speed;
+    } else {
+      // For unlimited range towers, use a very high lifetime
+      tower._projectileLifetime = 10; // 10 seconds should be enough for any map
     }
   }
   
@@ -185,6 +188,8 @@ export class Game{
       this.state.waveQueue = buildWave(this.state.wave, level);
     }
     this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
+    // Reset auto-wave timer to prevent accidental immediate restart
+    this.state.autoWaveTimer = 0;
   }
   update(dt){
     // spawn
@@ -293,12 +298,14 @@ export class Game{
         if(!suppressNormalShot && target && t.cooldown === 0){ 
           // Calculate actual damage with critical hits
           let actualDamage = t._tempDamage || t.damage;
+          let wasCrit = false;
           if(t.critChance && Math.random() < t.critChance) {
             actualDamage *= (t.critMultiplier || 2.0);
+            wasCrit = true;
             UI.float(this, target.x, target.y, 'CRIT!', false);
             
             // Crit explosions upgrade
-            if(t.critExplosions) {
+            if(t.critExplosions && wasCrit) {
               // Create a small explosion at target
               spawnExplosion(target.x, target.y, 30);
               // Damage nearby enemies
@@ -345,6 +352,11 @@ export class Game{
     stepPowerups(dt, this.state);
     stepAbilities(dt);
     stepStats(dt); // Track playtime and other stats
+    
+    // Ensure UI is synced (especially for lives changes from enemy damage)
+    if (this.state.running && Math.random() < 0.1) { // Sync ~10% of frames to avoid performance issues
+      UI.sync(this);
+    }
     
     // Simple auto-wave progression - start next wave after 3 seconds
     if (this.state.betweenWaves && this.state.autoWaveTimer > 0) {

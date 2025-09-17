@@ -60,7 +60,9 @@ export const specialAbilities = {
     description: 'Instantly repairs 50 lives and gives temporary invulnerability',
     currentCooldown: 0,
     effect: (game) => {
-      game.state.lives = Math.min(100, game.state.lives + 50);
+      // Use the difficulty's starting lives as the maximum, or fallback to 100
+      const maxLives = game.state.currentDifficulty?.startingLives || 100;
+      game.state.lives = Math.min(maxLives, game.state.lives + 50);
       game.state._invulnerable = true;
       setTimeout(() => {
         game.state._invulnerable = false;
