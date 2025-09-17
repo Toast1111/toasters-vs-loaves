@@ -83,6 +83,16 @@ export class MenuManager {
   transition(newState: GameState, data?: any) {
     this.previousState = this.currentState;
     this.currentState = newState;
+
+    // Toggle layout mode based on state
+    const wrapper = document.querySelector('.wrap');
+    if (wrapper) {
+      if ([GameState.TITLE_SCREEN, GameState.KITCHEN_HQ, GameState.MAP_SELECT, GameState.DIFFICULTY_SELECT, GameState.GAME_OVER, GameState.VICTORY].includes(newState)) {
+        wrapper.classList.add('menu-mode');
+      } else {
+        wrapper.classList.remove('menu-mode');
+      }
+    }
     
     this.clearMenuContainer();
     

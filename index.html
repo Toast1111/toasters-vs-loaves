@@ -10,7 +10,8 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%;margin:0;background:linear-gradient(180deg,#0b0b10,#14141b);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    .wrap{display:grid;grid-template-columns:1fr 240px;gap:10px;height:100%;padding:10px}
+  .wrap{display:grid;grid-template-columns:1fr 240px;gap:10px;height:100%;padding:10px}
+  .wrap.menu-mode{grid-template-columns:1fr}
     #gamePanel{position:relative;border:1px solid #27273a;border-radius:14px;overflow:hidden;background:#0c0f15}
     canvas{display:block;background:#0a0d12}
     .hud{position:absolute;inset:0;pointer-events:none}
@@ -857,7 +858,7 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
+  <div class="wrap menu-mode">
     <div id="gamePanel">
       <canvas id="game" width="960" height="540"></canvas>
       <div class="hud">
