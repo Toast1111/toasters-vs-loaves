@@ -259,9 +259,9 @@ function performChainLightning(projectile, firstEnemy, state) {
   applyStun(firstEnemy, projectile.chainStunDuration);
   
   // Create visual lightning effect
-  import('../particles').then(({spawnLightning}) => {
-    if(spawnLightning) {
-      spawnLightning(projectile.x, projectile.y, firstEnemy.x, firstEnemy.y);
+  import('../particles').then(({spawnChainLightningArc}) => {
+    if(spawnChainLightningArc) {
+      spawnChainLightningArc(projectile.x, projectile.y, firstEnemy.x, firstEnemy.y, 0);
     }
   }).catch(() => {}); // Ignore if lightning effect doesn't exist
   
@@ -293,9 +293,9 @@ function performChainLightning(projectile, firstEnemy, state) {
     projectile.chainHitEnemies.push(nextTarget.id);
     
     // Create visual lightning effect between current and next enemy
-    import('../particles').then(({spawnLightning}) => {
-      if(spawnLightning) {
-        spawnLightning(currentEnemy.x, currentEnemy.y, nextTarget.x, nextTarget.y);
+    import('../particles').then(({spawnChainLightningArc}) => {
+      if(spawnChainLightningArc) {
+        spawnChainLightningArc(currentEnemy.x, currentEnemy.y, nextTarget.x, nextTarget.y, i + 1);
       }
     }).catch(() => {}); // Ignore if lightning effect doesn't exist
     

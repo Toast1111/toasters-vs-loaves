@@ -68,6 +68,204 @@ export function spawnMuzzleFlash(x, y, angle) {
   }
 }
 
+export function spawnLightning(x1, y1, x2, y2, intensity = 1) {
+  // Create main lightning bolt
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const segments = Math.max(3, Math.floor(distance / 20));
+  
+  // Generate jagged lightning path
+  const points = [{x: x1, y: y1}];
+  for(let i = 1; i < segments; i++) {
+    const t = i / segments;
+    const baseX = x1 + dx * t;
+    const baseY = y1 + dy * t;
+    
+    // Add random perpendicular offset
+    const perpX = -dy / distance;
+    const perpY = dx / distance;
+    const offset = (Math.random() - 0.5) * 30 * intensity;
+    
+    points.push({
+      x: baseX + perpX * offset,
+      y: baseY + perpY * offset
+    });
+  }
+  points.push({x: x2, y: y2});
+  
+  // Create lightning particle
+  particles.push({
+    type: 'lightning',
+    points: points,
+    life: 0.3,
+    intensity: intensity,
+    color: '#66ccff',
+    width: 3 * intensity
+  });
+  
+  // Add electrical sparks at endpoints
+  spawnElectricalSparks(x1, y1, 3);
+  spawnElectricalSparks(x2, y2, 3);
+}
+
+export function spawnElectricalSparks(x, y, count = 5) {
+  for(let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 80 + 40;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      g: 0,
+      life: Math.random() * 0.4 + 0.2,
+      type: 'spark',
+      color: '#88ddff',
+      size: Math.random() * 3 + 1
+    });
+  }
+}
+
+export function spawnMicrowaveBeam(x1, y1, x2, y2) {
+  // Create microwave beam effect
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  particles.push({
+    type: 'microwave_beam',
+    x1, y1, x2, y2,
+    life: 0.2,
+    color: '#ff6600',
+    width: 4,
+    intensity: 1
+  });
+  
+  // Add energy particles along the beam
+  const particleCount = Math.floor(distance / 15);
+  for(let i = 0; i < particleCount; i++) {
+    const t = Math.random();
+    const x = x1 + dx * t;
+    const y = y1 + dy * t;
+    
+    particles.push({
+      x: x + (Math.random() - 0.5) * 10,
+      y: y + (Math.random() - 0.5) * 10,
+      vx: (Math.random() - 0.5) * 20,
+      vy: (Math.random() - 0.5) * 20,
+      g: 0,
+      life: Math.random() * 0.3 + 0.1,
+      type: 'energy',
+      color: '#ff9933',
+      size: Math.random() * 2 + 1
+    });
+  }
+}
+
+export function spawnChainLightningArc(x1, y1, x2, y2, chainIndex = 0) {
+  // Create more dramatic arcs for chain lightning
+  const intensity = Math.max(0.5, 1 - chainIndex * 0.1); // Diminish with each chain
+  spawnLightning(x1, y1, x2, y2, intensity);
+  
+  // Add chain-specific visual feedback
+  const midX = (x1 + x2) / 2;
+  const midY = (y1 + y2) / 2;
+  
+  particles.push({
+    x: midX,
+    y: midY,
+    type: 'chain_indicator',
+    life: 0.5,
+    scale: 1,
+    chainIndex: chainIndex,
+    color: chainIndex < 3 ? '#66ccff' : '#4499cc'
+  });
+}
+
+// Additional effects for future use
+export function spawnLaserBeam(x1, y1, x2, y2, color = '#ff0000', width = 2) {
+  particles.push({
+    type: 'laser_beam',
+    x1, y1, x2, y2,
+    life: 0.15,
+    color: color,
+    width: width,
+    intensity: 1
+  });
+}
+
+export function spawnFireTrail(x, y, direction, length = 5) {
+  for(let i = 0; i < length; i++) {
+    const angle = direction + (Math.random() - 0.5) * 0.5;
+    const speed = Math.random() * 60 + 30;
+    particles.push({
+      x: x + (Math.random() - 0.5) * 8,
+      y: y + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      g: -50, // Float upward
+      life: Math.random() * 0.8 + 0.4,
+      type: 'fire',
+      color: `hsl(${Math.random() * 60}, 90%, ${Math.random() * 20 + 60}%)`,
+      size: Math.random() * 4 + 2
+    });
+  }
+}
+
+export function spawnIceShards(x, y, count = 8) {
+  for(let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 120 + 80;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      g: 200,
+      life: Math.random() * 0.6 + 0.4,
+      type: 'ice_shard',
+      color: '#aaeeff',
+      size: Math.random() * 3 + 1,
+      rotation: Math.random() * Math.PI * 2,
+      rotationSpeed: (Math.random() - 0.5) * 10
+    });
+  }
+}
+
+export function spawnPlasmaBolt(x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  particles.push({
+    type: 'plasma_bolt',
+    x1, y1, x2, y2,
+    life: 0.25,
+    color: '#ff66ff',
+    width: 6,
+    intensity: 1
+  });
+  
+  // Add plasma energy particles
+  const particleCount = Math.floor(distance / 12);
+  for(let i = 0; i < particleCount; i++) {
+    const t = Math.random();
+    const x = x1 + dx * t;
+    const y = y1 + dy * t;
+    
+    particles.push({
+      x: x + (Math.random() - 0.5) * 15,
+      y: y + (Math.random() - 0.5) * 15,
+      vx: (Math.random() - 0.5) * 40,
+      vy: (Math.random() - 0.5) * 40,
+      g: 0,
+      life: Math.random() * 0.4 + 0.2,
+      type: 'plasma_particle',
+      color: '#ff99ff',
+      size: Math.random() * 3 + 1
+    });
+  }
+}
+
 export function spawnDamageNumber(x, y, damage, isCrit = false, isResisted = false, isVulnerable = false, isHealing = false) {
   damageNumbers.push({
     x, y,

@@ -371,6 +371,141 @@ export function drawScene(ctx, state, game){
       ctx.arc(pr.x, pr.y, size, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
+    } else if (pr.type === 'lightning') {
+      // Draw lightning bolt
+      const alpha = pr.life / 0.3;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = pr.color;
+      ctx.lineWidth = pr.width;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      // Add glow effect
+      ctx.shadowColor = pr.color;
+      ctx.shadowBlur = 8;
+      
+      ctx.beginPath();
+      if(pr.points && pr.points.length > 1) {
+        ctx.moveTo(pr.points[0].x, pr.points[0].y);
+        for(let i = 1; i < pr.points.length; i++) {
+          ctx.lineTo(pr.points[i].x, pr.points[i].y);
+        }
+      }
+      ctx.stroke();
+      
+      // Reset shadow
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'spark') {
+      const alpha = pr.life / 0.6;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      ctx.beginPath();
+      ctx.arc(pr.x, pr.y, pr.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'microwave_beam') {
+      const alpha = pr.life / 0.2;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = pr.color;
+      ctx.lineWidth = pr.width;
+      ctx.lineCap = 'round';
+      
+      // Add glow effect
+      ctx.shadowColor = pr.color;
+      ctx.shadowBlur = 6;
+      
+      ctx.beginPath();
+      ctx.moveTo(pr.x1, pr.y1);
+      ctx.lineTo(pr.x2, pr.y2);
+      ctx.stroke();
+      
+      // Reset shadow
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'energy') {
+      const alpha = pr.life / 0.4;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      ctx.beginPath();
+      ctx.arc(pr.x, pr.y, pr.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'chain_indicator') {
+      const alpha = pr.life / 0.5;
+      const scale = 1 + (1 - alpha) * 0.5; // Grow as it fades
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      ctx.font = `${10 * scale}px ui-monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚡${pr.chainIndex + 1}`, pr.x, pr.y);
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'laser_beam') {
+      const alpha = pr.life / 0.15;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = pr.color;
+      ctx.lineWidth = pr.width;
+      ctx.lineCap = 'round';
+      
+      // Add intense glow
+      ctx.shadowColor = pr.color;
+      ctx.shadowBlur = 12;
+      
+      ctx.beginPath();
+      ctx.moveTo(pr.x1, pr.y1);
+      ctx.lineTo(pr.x2, pr.y2);
+      ctx.stroke();
+      
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'fire') {
+      const alpha = pr.life / 1.2;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      ctx.beginPath();
+      ctx.arc(pr.x, pr.y, pr.size * alpha, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'ice_shard') {
+      const alpha = pr.life / 1.0;
+      ctx.globalAlpha = alpha;
+      ctx.save();
+      ctx.translate(pr.x, pr.y);
+      ctx.rotate(pr.rotation);
+      ctx.fillStyle = pr.color;
+      ctx.fillRect(-pr.size/2, -pr.size/2, pr.size, pr.size);
+      ctx.restore();
+      ctx.globalAlpha = 1;
+      pr.rotation += pr.rotationSpeed * 0.016; // Assuming 60fps
+    } else if (pr.type === 'plasma_bolt') {
+      const alpha = pr.life / 0.25;
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = pr.color;
+      ctx.lineWidth = pr.width;
+      ctx.lineCap = 'round';
+      
+      // Pulsing plasma effect
+      ctx.shadowColor = pr.color;
+      ctx.shadowBlur = 8 + Math.sin(Date.now() * 0.02) * 4;
+      
+      ctx.beginPath();
+      ctx.moveTo(pr.x1, pr.y1);
+      ctx.lineTo(pr.x2, pr.y2);
+      ctx.stroke();
+      
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'plasma_particle') {
+      const alpha = pr.life / 0.6;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      ctx.shadowColor = pr.color;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(pr.x, pr.y, pr.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
     } else {
       ctx.fillStyle = "#e7c08a88"; 
       ctx.fillRect(pr.x, pr.y, 2, 2); 

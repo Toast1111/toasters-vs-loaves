@@ -372,9 +372,20 @@ export class Game{
             createHeatZone(target.x, target.y, 45, 8, 2.5);
             addScreenShake(3, 0.15);
           } else {
-            // Add muzzle flash
+            // Add muzzle flash and special effects for microwave towers
             const angle = Math.atan2(target.y - t.y, target.x - t.x);
-            spawnMuzzleFlash(t.x, t.y, angle);
+            
+            if(t.type === 'microwave') {
+              // Custom microwave beam effect instead of regular muzzle flash
+              import('../systems/particles').then(({spawnMicrowaveBeam}) => {
+                if(spawnMicrowaveBeam) {
+                  spawnMicrowaveBeam(t.x, t.y, target.x, target.y);
+                }
+              }).catch(() => {});
+            } else {
+              spawnMuzzleFlash(t.x, t.y, angle);
+            }
+            
             fireFrom(t, target, actualDamage); 
             
             // Chain lightning for Gamma Burst
@@ -410,7 +421,18 @@ export class Game{
               
               if(secondTarget) {
                 const angle2 = Math.atan2(secondTarget.y - t.y, secondTarget.x - t.x);
-                spawnMuzzleFlash(t.x, t.y, angle2);
+                
+                // Custom effect for microwave towers
+                if(t.type === 'microwave') {
+                  import('../systems/particles').then(({spawnMicrowaveBeam}) => {
+                    if(spawnMicrowaveBeam) {
+                      spawnMicrowaveBeam(t.x, t.y, secondTarget.x, secondTarget.y);
+                    }
+                  }).catch(() => {});
+                } else {
+                  spawnMuzzleFlash(t.x, t.y, angle2);
+                }
+                
                 fireFrom(t, secondTarget, actualDamage);
                 
                 // Apply chain lightning to second projectile too if it's a gamma burst
