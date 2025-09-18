@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { RARITY } from '../shared';
-import { drawDefaultToaster } from '../../../../rendering/drawUtils';
+import { MicrowaveVisualManager } from './visuals';
 
 const microwave = {
   key:'microwave', name:'Microwave', cost:260, rarity:RARITY.EPIC,
@@ -53,7 +53,14 @@ const microwave = {
       ]
     }
   ],
-  draw(ctx){ drawDefaultToaster(ctx); }
+  draw(ctx, t, state){
+    // Initialize minimal animation state for base visuals
+    t._display = (t._display || 0);
+    
+    // Get and call the appropriate visual function based on upgrades
+    const visualFunc = MicrowaveVisualManager.getVisualFunction(t.upgradeTiers);
+    visualFunc(ctx, t, state);
+  }
 };
 
 export default microwave;

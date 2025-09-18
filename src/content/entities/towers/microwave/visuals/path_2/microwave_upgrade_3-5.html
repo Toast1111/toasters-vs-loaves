@@ -3,9 +3,180 @@
 <html>
 <head>
     <title>Microwave Toaster Upgrades 3-5</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #2a1040, #1a0a30);
+            color: #e0e0ff;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .upgrade-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #6060ff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(96, 96, 255, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #a060ff;
+            text-shadow: 0 0 10px rgba(160, 96, 255, 0.5);
+            margin-bottom: 30px;
+        }
+        
+        .upgrade-path {
+            background: rgba(40, 20, 64, 0.5);
+            border: 1px solid #7040ff;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 15px;
+        }
+        
+        .path-title {
+            color: #9050ff;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .upgrade-tier {
+            background: rgba(30, 10, 50, 0.7);
+            border-left: 4px solid #8040ff;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        
+        .tier-name {
+            color: #b060ff;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .tier-effect {
+            color: #d0d0ff;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+        
+        .tier-visual {
+            color: #ff80ff;
+            font-size: 0.8em;
+            font-style: italic;
+        }
+        
+        .radiation-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ff40ff, #8020ff);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .energy-bar {
+            height: 6px;
+            background: linear-gradient(90deg, #4020ff, #8040ff, #ff40ff);
+            border-radius: 3px;
+            margin: 5px 0;
+            animation: energyFlow 3s linear infinite;
+        }
+        
+        @keyframes energyFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+    </style>
 </head>
 <body>
-    <h1>Microwave Toaster Advanced Upgrades</h1>
-    <!-- Placeholder for upgrade tier 3-5 visuals -->
+    <div class="upgrade-container">
+        <h1><span class="radiation-indicator"></span> Microwave Toaster Advanced Upgrades <span class="radiation-indicator"></span></h1>
+        
+        <div class="upgrade-path">
+            <div class="path-title">Path 0: Wave Power (Pierce Specialist)</div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 3: Overload Cooking</div>
+                <div class="tier-effect">+15 damage per enemy pierced through</div>
+                <div class="tier-visual">Overload sparks and heat distortion effects around magnetron</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 4: Radiation Lance</div>
+                <div class="tier-effect">Infinite pierce, but drains all energy per shot</div>
+                <div class="tier-visual">Focused radiation beam with lance charging indicators</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 5: Nuclear Reheat</div>
+                <div class="tier-effect">Piercing shots explode into AoE after traveling</div>
+                <div class="tier-visual">Nuclear radiation burst rings and particle effects</div>
+                <div class="energy-bar"></div>
+            </div>
+        </div>
+        
+        <div class="upgrade-path">
+            <div class="path-title">Path 1: Network Coverage (Control Specialist)</div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 3: Static Shock</div>
+                <div class="tier-effect">5% chance to stun enemies for 0.5s</div>
+                <div class="tier-visual">Electric arc effects and antenna array with signal indicators</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 4: Pulse Microwave</div>
+                <div class="tier-effect">Periodic shockwave that slows all enemies in range</div>
+                <div class="tier-visual">Expanding pulse rings and network transmission core</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 5: Orbital Oven</div>
+                <div class="tier-effect">Massive range boost (nearly global), but doubled reload time</div>
+                <div class="tier-visual">Orbital satellites with global coverage indicators</div>
+                <div class="energy-bar"></div>
+            </div>
+        </div>
+        
+        <div class="upgrade-path">
+            <div class="path-title">Path 2: Rapid Cycling (Radiation Battery)</div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 3: Energy Hoarder</div>
+                <div class="tier-effect">+3 energy capacity but -1 damage per shot</div>
+                <div class="tier-visual">Energy storage cells and accumulating energy particles</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 4: Dualwave Mode</div>
+                <div class="tier-effect">Fires 2 independent beams per shot, consuming 2 energy</div>
+                <div class="tier-visual">Twin magnetron cores with dual targeting beams</div>
+                <div class="energy-bar"></div>
+            </div>
+            
+            <div class="upgrade-tier">
+                <div class="tier-name">Tier 5: Gamma Burst</div>
+                <div class="tier-effect">First shot after full recharge causes chain lightning (8 enemies, 2s stun)</div>
+                <div class="tier-visual">Explosive gamma effects with chain lightning branches</div>
+                <div class="energy-bar"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
