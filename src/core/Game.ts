@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { createInitialState } from "./state";
 import { drawScene } from "../rendering/render";
-import { buildWave } from "../content/waves";
+import { buildWave, buildBossWave } from "../content/waves";
 import { isBuildable, waypoints, getLevel, isBuildableOnLevel } from "../content/maps";
 import { fireFrom, projectiles, stepProjectiles } from "../systems/projectiles";
 import { spawnCrumbs, particles, stepParticles, spawnMuzzleFlash, spawnExplosion } from "../systems/particles";
@@ -188,14 +188,40 @@ export class Game{
   }
   getSelected(){ return this.state.toasters.find(t=>t.id===this.state.selected); }
   startWave(){
-    if(this.state.waveInProgress) return; this.state.wave++; UI.sync(this); UI.log(`Wave ${this.state.wave} begins!`);
+    if(this.state.waveInProgress) return; 
+    this.state.wave++; 
+    UI.sync(this); 
+    UI.log(`Wave ${this.state.wave} begins!`);
+    
     const level = this.state.currentLevel;
-    if (this.state.wave % 10 === 0) {
-      this.state.waveQueue = buildBossWave(this.state.wave, level);
-    } else {
-      this.state.waveQueue = buildWave(this.state.wave, level);
+    let waveData;
+    
+    // Ensure we always get valid wave data
+    try {
+      if (this.state.wave % 10 === 0) {
+        waveData = buildBossWave(this.state.wave, level);
+      } else {
+        waveData = buildWave(this.state.wave, level);
+      }
+      
+      // Validate that we got valid wave data
+      if (!waveData || !Array.isArray(waveData) || waveData.length === 0) {
+        console.error(`Failed to generate wave data for wave ${this.state.wave}`);
+        // Fallback - generate a basic wave manually
+        waveData = [{type:'slice', hp:20+4*this.state.wave, speed:70+1.5*this.state.wave, bounty:4}];
+      }
+      
+      this.state.waveQueue = waveData;
+    } catch (error) {
+      console.error(`Error generating wave ${this.state.wave}:`, error);
+      // Emergency fallback
+      this.state.waveQueue = [{type:'slice', hp:20+4*this.state.wave, speed:70+1.5*this.state.wave, bounty:4}];
     }
-    this.state.spawnTimer=0; this.state.betweenWaves=false; this.state.waveInProgress=true; this.state.running=true;
+    
+    this.state.spawnTimer=0; 
+    this.state.betweenWaves=false; 
+    this.state.waveInProgress=true; 
+    this.state.running=true;
     // Reset auto-wave timer to prevent accidental immediate restart
     this.state.autoWaveTimer = 0;
   }
@@ -386,7 +412,23 @@ export class Game{
               spawnMuzzleFlash(t.x, t.y, angle);
             }
             
-            fireFrom(t, target, actualDamage); 
+            // Apply inaccuracy for airfryer towers
+            let finalTarget = target;
+            if(t.type === 'airfryer') {
+              const baseAngle = Math.atan2(target.y - t.y, target.x - t.x);
+              // Base inaccuracy reduced by precision jets upgrade
+              // 0.15 radians ≈ 8.6 degrees, 0.08 radians ≈ 4.6 degrees (vs tornado upgrade's 0.9 radians ≈ 51.6 degrees)
+              const inaccuracy = t.precisionJets ? 0.08 : 0.15; 
+              const offset = (Math.random() - 0.5) * inaccuracy;
+              const distance = Math.hypot(target.x - t.x, target.y - t.y);
+              
+              finalTarget = {
+                x: t.x + Math.cos(baseAngle + offset) * distance,
+                y: t.y + Math.sin(baseAngle + offset) * distance
+              };
+            }
+            
+            fireFrom(t, finalTarget, actualDamage); 
             
             // Chain lightning for Gamma Burst
             if(isGammaBurst && t.chainLightning) {
@@ -433,7 +475,21 @@ export class Game{
                   spawnMuzzleFlash(t.x, t.y, angle2);
                 }
                 
-                fireFrom(t, secondTarget, actualDamage);
+                // Apply inaccuracy for airfryer towers (same logic as first shot)
+                let finalSecondTarget = secondTarget;
+                if(t.type === 'airfryer') {
+                  const baseAngle = Math.atan2(secondTarget.y - t.y, secondTarget.x - t.x);
+                  const inaccuracy = t.precisionJets ? 0.08 : 0.15; // Precision jets reduces inaccuracy
+                  const offset = (Math.random() - 0.5) * inaccuracy;
+                  const distance = Math.hypot(secondTarget.x - t.x, secondTarget.y - t.y);
+                  
+                  finalSecondTarget = {
+                    x: t.x + Math.cos(baseAngle + offset) * distance,
+                    y: t.y + Math.sin(baseAngle + offset) * distance
+                  };
+                }
+                
+                fireFrom(t, finalSecondTarget, actualDamage);
                 
                 // Apply chain lightning to second projectile too if it's a gamma burst
                 if(isGammaBurst && t.chainLightning) {
@@ -455,7 +511,21 @@ export class Game{
               // Small delay for second shot
               setTimeout(() => {
                 if(target.alive) {
-                  fireFrom(t, target, actualDamage * 0.8);
+                  // Apply inaccuracy for airfryer towers (same logic as main shot)
+                  let finalDoubleTarget = target;
+                  if(t.type === 'airfryer') {
+                    const baseAngle = Math.atan2(target.y - t.y, target.x - t.x);
+                    const inaccuracy = t.precisionJets ? 0.08 : 0.15; // Precision jets reduces inaccuracy
+                    const offset = (Math.random() - 0.5) * inaccuracy;
+                    const distance = Math.hypot(target.x - t.x, target.y - t.y);
+                    
+                    finalDoubleTarget = {
+                      x: t.x + Math.cos(baseAngle + offset) * distance,
+                      y: t.y + Math.sin(baseAngle + offset) * distance
+                    };
+                  }
+                  
+                  fireFrom(t, finalDoubleTarget, actualDamage * 0.8);
                   spawnMuzzleFlash(t.x, t.y, angle);
                 }
               }, 50);

@@ -26,6 +26,8 @@ export function fireFrom(t, target, customDamage = null){
   const speed=t.projectileSpeed || 300; // Add fallback
   const damage = customDamage || t.damage || 1; // Add fallback
   
+  console.log(`DEBUG: fireFrom - tower damage=${t.damage}, customDamage=${customDamage}, final damage=${damage}`);
+  
   // Get projectile from pool and initialize all properties
   const p = getPooledProjectile();
   p.id = ++_id;
@@ -34,6 +36,7 @@ export function fireFrom(t, target, customDamage = null){
   p.vx = Math.cos(angle)*speed;
   p.vy = Math.sin(angle)*speed;
   p.dmg = damage;
+  console.log(`DEBUG: Projectile created with dmg=${p.dmg}`);
   p.pierce = t.pierce || 0;
   p.splash = t.splash || 0;
   p.splashDmg = t.splashDmg || 0;

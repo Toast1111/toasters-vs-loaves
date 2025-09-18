@@ -148,6 +148,9 @@ const SPLIT_PATTERNS = {
 };
 
 export function damageBread(e, dmg, state, damageType = 'physical'){
+  // Debug logging
+  console.log(`DEBUG: damageBread called with dmg=${dmg}, enemy hp=${e.hp}, type=${damageType}`);
+  
   // Calculate base damage after armor (including temporary explosion armor)
   const totalArmor = (e.armor || 0) + (e.explosionArmor || 0);
   let actualDamage = dmg * Math.max(0.05, 1 - totalArmor); // Minimum 5% damage gets through armor
@@ -156,6 +159,8 @@ export function damageBread(e, dmg, state, damageType = 'physical'){
   if (e.resistances && e.resistances[damageType] !== undefined) {
     actualDamage *= Math.max(0.05, 1 - e.resistances[damageType]); // Minimum 5% damage gets through resistance
   }
+  
+  console.log(`DEBUG: actualDamage=${actualDamage}, armor=${totalArmor}, resistances=${JSON.stringify(e.resistances)}`);
   
   e.hp -= actualDamage; 
   
@@ -233,7 +238,9 @@ export function damageBread(e, dmg, state, damageType = 'physical'){
     }
     
     const bonus = Math.round(e.bounty * state.global.bounty); 
+    console.log(`DEBUG: Enemy killed, bounty=${e.bounty}, global.bounty=${state.global.bounty}, bonus=${bonus}, current coins=${state.coins}`);
     state.coins += bonus; 
+    console.log(`DEBUG: Coins after award=${state.coins}`);
     recordCoinsEarned(bonus); // Record for achievements
     document.getElementById('coins').textContent = state.coins;
     

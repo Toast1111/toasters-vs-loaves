@@ -4,14 +4,14 @@ import { AirfryerVisualManager } from './visuals';
 
 const airfryer = {
   key:'airfryer', name:'Air Fryer', cost:340, rarity:RARITY.EPIC,
-  desc:'Rapid-fire hot air blasts. Lower damage but extreme speed.',
+  desc:'Rapid-fire hot air blasts. Lower damage but extreme speed. Reduced accuracy.',
   base:{range:140, fireRate:3.5, damage:8, projectileSpeed:450},
   upgradePaths:[
     { // Path 0: Pressure Cooker
       name: 'Pressure Systems',
       upgrades:[
-        {name:'Precision Jets', cost:140, tip:'+6 damage', 
-         effect:t=>t.damage+=6},
+        {name:'Precision Jets', cost:140, tip:'+6 damage, improved accuracy', 
+         effect:t=>{t.damage+=6; t.precisionJets=true;}},
         {name:'Pressurized Chamber', cost:230, tip:'+10 damage, chance to crit', 
          effect:t=>{t.damage+=10; t.critChance=0.15; t.critMultiplier=2.0;}},
         {name:'Superheated Air', cost:400, tip:'+16 damage, higher crit chance', 
