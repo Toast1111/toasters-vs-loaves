@@ -104,6 +104,13 @@ export class Game{
       isReloading:false,
       reloadProgress:0,
       lastRadiationRegen:Date.now(),
+      // Missile launcher slot system
+      missileSlots:type.base.missileSlots||null,
+      slotCooldowns:type.base.slotCooldowns ? [...type.base.slotCooldowns] : null,
+      slotAmmoTypes:null, // Will be initialized when multiWarhead is unlocked
+      currentSlot:0, // Which slot fires next
+      arcingFire:type.base.arcingFire||false,
+      indirectFire:type.base.indirectFire||false,
       // New upgrade path system
       upgradeTiers:[0,0,0], // [path0, path1, path2] - tracks tier for each path
       cooldown:0, sold:false,
@@ -252,6 +259,14 @@ export class Game{
       for(const t of this.state.toasters){
         t.cooldown-=dt; if(t.cooldown<0) t.cooldown=0;
         
+        // Handle missile launcher slot cooldowns
+        if(t.missileSlots && t.slotCooldowns) {
+          for(let i = 0; i < t.slotCooldowns.length; i++) {
+            t.slotCooldowns[i] -= dt;
+            if(t.slotCooldowns[i] < 0) t.slotCooldowns[i] = 0;
+          }
+        }
+        
         // Handle radiation system for microwave towers
         if(t.radiationCapacity !== null && t.reloadTime !== null) {
           if(t.isReloading) {
@@ -343,7 +358,130 @@ export class Game{
             }
           }
         }
-        if(!suppressNormalShot && target && t.cooldown === 0){ 
+        
+        // Handle missile launcher firing (independent slot system)
+        if(t.missileSlots && t.slotCooldowns) {
+          // Check if any slot is ready to fire
+          for(let slotIndex = 0; slotIndex < t.slotCooldowns.length; slotIndex++) {
+            if(t.slotCooldowns[slotIndex] === 0) {
+              // This slot is ready to fire - find its own target
+              let slotTarget = null;
+              let bestScore = -1;
+              
+              // Find the best target for this specific slot
+              for(const e of breads) {
+                if(!e.alive) continue;
+                const dist = Math.hypot(e.x - t.x, e.y - t.y);
+                if(dist > t.range) continue;
+                
+                // Score targets based on distance and threat level
+                let score = 1000 - dist; // Closer is better
+                if(e.hp > 100) score += 200; // Prioritize high HP targets
+                if(e.type.includes('boss')) score += 500; // Bosses get priority
+                
+                // Add some randomness to spread targeting across multiple enemies
+                score += Math.random() * 100;
+                
+                if(score > bestScore) {
+                  bestScore = score;
+                  slotTarget = e;
+                }
+              }
+              
+              // Only fire if we found a target
+              if(!slotTarget) continue;
+              
+              const slotFireRate = t.fireRate;
+              
+              // Determine ammo type for this slot
+              let actualDamage = t.damage;
+              let ammoType = 'standard';
+              
+              if(t.multiWarhead && t.customAmmoPerSlot && t.slotAmmoTypes) {
+                ammoType = t.slotAmmoTypes[slotIndex] || 'standard';
+              }
+              
+              // Apply ammo type effects
+              switch(ammoType) {
+                case 'high_explosive':
+                  actualDamage *= 1.3;
+                  break;
+                case 'armor_piercing':
+                  actualDamage *= 1.1;
+                  break;
+                case 'cluster':
+                  actualDamage *= 0.8; // Main warhead does less damage
+                  break;
+                case 'thermobaric':
+                  actualDamage *= 1.5;
+                  break;
+                case 'nuclear':
+                  actualDamage *= 2.5;
+                  break;
+                default: // 'standard'
+                  break;
+              }
+              
+              // Create a temporary projectile config based on ammo type
+              const tempTower = {...t};
+              tempTower.currentAmmoType = ammoType; // Pass ammo type to projectile
+              tempTower.slotIndex = slotIndex; // Pass slot index for visual positioning
+              
+              if(t.multiWarhead && ammoType !== 'standard') {
+                switch(ammoType) {
+                  case 'high_explosive':
+                    tempTower.splash = (t.splash || 40) * 1.5;
+                    tempTower.splashDmg = (t.splashDmg || 25) * 1.3;
+                    break;
+                  case 'armor_piercing':
+                    tempTower.armorPiercing = (t.armorPiercing || 0) + 5;
+                    tempTower.penetratesShields = true;
+                    break;
+                  case 'cluster':
+                    tempTower.clusterBombs = true;
+                    tempTower.submunitions = 4;
+                    tempTower.submunitionDamage = actualDamage * 0.6;
+                    break;
+                  case 'thermobaric':
+                    tempTower.splash = (t.splash || 40) * 2;
+                    tempTower.splashDmg = (t.splashDmg || 25) * 1.8;
+                    tempTower.fireDamage = actualDamage * 0.3;
+                    tempTower.burnDuration = 4;
+                    break;
+                  case 'nuclear':
+                    tempTower.splash = (t.splash || 40) * 3;
+                    tempTower.splashDmg = (t.splashDmg || 25) * 2.5;
+                    tempTower.radiationDamage = actualDamage * 0.5;
+                    tempTower.radiationRadius = tempTower.splash * 1.5;
+                    break;
+                }
+              }
+              
+              // Fire missile from this slot with appropriate ammo type
+              fireFrom(tempTower, slotTarget, actualDamage);
+              
+              // Set this slot's cooldown
+              t.slotCooldowns[slotIndex] = 1 / slotFireRate;
+              
+              // Visual feedback for missile launch with ammo type
+              const ammoIcon = {
+                'standard': '🚀',
+                'high_explosive': '💥',
+                'armor_piercing': '🔹',
+                'cluster': '🎆',
+                'thermobaric': '🔥',
+                'nuclear': '☢️'
+              }[ammoType] || '🚀';
+              
+              UI.float(this, t.x, t.y, `${ammoIcon} Slot ${slotIndex + 1}`, false);
+              
+              // Only fire one missile per frame to spread out the launches
+              break;
+            }
+          }
+        }
+        
+        if(!suppressNormalShot && target && t.cooldown === 0 && !t.missileSlots){ 
           // Check radiation capacity for microwave towers
           const energyRequired = t.energyPerShot || 1;
           if(t.radiationCapacity !== null) {

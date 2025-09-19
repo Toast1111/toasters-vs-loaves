@@ -8,6 +8,176 @@ import { powerups, activePowerups, POWERUP_TYPES } from "../systems/powerups";
 import { getTowerBase } from "../content/entities/towers";
 import { roundedRect } from "./drawUtils";
 
+// Custom missile rendering function
+function drawMissile(ctx, missile) {
+  // Calculate apparent size based on height (missiles get smaller when higher)
+  const flightHeight = Math.max(0, missile.startY - missile.y); // Height above launch point
+  const maxHeight = 100; // Estimated max height for scaling
+  const heightRatio = Math.min(flightHeight / maxHeight, 1);
+  const sizeScale = 1 - (heightRatio * 0.4); // Missiles appear 40% smaller at max height
+  
+  // Draw exhaust trail first (behind missile)
+  if(missile.exhaustTrail && missile.exhaustTrail.length > 1) {
+    const ammoType = missile.ammoType || 'standard';
+    let trailColor = '#ff6600';
+    
+    switch(ammoType) {
+      case 'high_explosive':
+        trailColor = '#ff8800';
+        break;
+      case 'armor_piercing':
+        trailColor = '#0066ff';
+        break;
+      case 'cluster':
+        trailColor = '#ff6600';
+        break;
+      case 'thermobaric':
+        trailColor = '#ff4400';
+        break;
+      case 'nuclear':
+        trailColor = '#00cc66';
+        break;
+    }
+    
+    ctx.strokeStyle = trailColor;
+    ctx.lineWidth = 3 * sizeScale;
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.7;
+    
+    ctx.beginPath();
+    ctx.moveTo(missile.exhaustTrail[0].x, missile.exhaustTrail[0].y);
+    
+    for(let i = 1; i < missile.exhaustTrail.length; i++) {
+      const segment = missile.exhaustTrail[i];
+      const alpha = segment.life / segment.maxLife;
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.lineTo(segment.x, segment.y);
+    }
+    
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  
+  ctx.save();
+  ctx.translate(missile.x, missile.y);
+  
+  // Calculate missile rotation based on velocity
+  const angle = Math.atan2(missile.vy, missile.vx);
+  ctx.rotate(angle);
+  
+  // Scale missile based on height
+  ctx.scale(sizeScale, sizeScale);
+  
+  // Determine missile appearance based on ammo type
+  const ammoType = missile.ammoType || 'standard';
+  let missileColor = '#cccccc'; // Default silver
+  let exhaustColor = '#ff6600'; // Default orange exhaust
+  let missileLength = 16; // Larger missiles for better visibility
+  let missileWidth = 4;
+  let glowColor = null;
+  
+  switch(ammoType) {
+    case 'high_explosive':
+      missileColor = '#ff4444';
+      exhaustColor = '#ff8800';
+      glowColor = '#ff4444';
+      break;
+    case 'armor_piercing':
+      missileColor = '#4488ff';
+      exhaustColor = '#0066ff';
+      missileLength = 18;
+      missileWidth = 3;
+      break;
+    case 'cluster':
+      missileColor = '#ffaa00';
+      exhaustColor = '#ff6600';
+      glowColor = '#ffaa00';
+      break;
+    case 'thermobaric':
+      missileColor = '#ff2200';
+      exhaustColor = '#ff4400';
+      glowColor = '#ff6600';
+      missileLength = 14;
+      missileWidth = 5;
+      break;
+    case 'nuclear':
+      missileColor = '#00ff88';
+      exhaustColor = '#00cc66';
+      glowColor = '#00ff88';
+      missileLength = 20;
+      missileWidth = 5;
+      break;
+  }
+  
+  // Add glow effect for special ammo types
+  if(glowColor) {
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = 10 * sizeScale;
+  }
+  
+  // Draw immediate exhaust (from missile nozzle)
+  const exhaustLength = 12 + Math.random() * 6;
+  ctx.fillStyle = exhaustColor;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(-exhaustLength, -missileWidth * 0.4);
+  ctx.lineTo(-exhaustLength * 0.4, 0);
+  ctx.lineTo(-exhaustLength, missileWidth * 0.4);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Draw exhaust particles
+  ctx.globalAlpha = 0.6;
+  for(let i = 0; i < 4; i++) {
+    const particleX = -exhaustLength - Math.random() * 8;
+    const particleY = (Math.random() - 0.5) * missileWidth * 1.5;
+    const particleSize = 1 + Math.random() * 3;
+    ctx.beginPath();
+    ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  ctx.globalAlpha = 1;
+  
+  // Draw missile body
+  ctx.fillStyle = missileColor;
+  roundedRect(ctx, -missileLength/2, -missileWidth/2, missileLength, missileWidth, missileWidth/2);
+  ctx.fill();
+  
+  // Draw missile nose cone
+  ctx.fillStyle = '#888888';
+  ctx.beginPath();
+  ctx.moveTo(missileLength/2, 0);
+  ctx.lineTo(missileLength/2 - 6, -missileWidth/2);
+  ctx.lineTo(missileLength/2 - 6, missileWidth/2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Draw fins
+  ctx.fillStyle = '#666666';
+  const finSize = missileWidth * 1.0;
+  // Top fin
+  ctx.beginPath();
+  ctx.moveTo(-missileLength/2 + 3, -missileWidth/2);
+  ctx.lineTo(-missileLength/2 + 3, -missileWidth/2 - finSize);
+  ctx.lineTo(-missileLength/2 + 8, -missileWidth/2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Bottom fin
+  ctx.beginPath();
+  ctx.moveTo(-missileLength/2 + 3, missileWidth/2);
+  ctx.lineTo(-missileLength/2 + 3, missileWidth/2 + finSize);
+  ctx.lineTo(-missileLength/2 + 8, missileWidth/2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Reset shadow
+  ctx.shadowBlur = 0;
+  
+  ctx.restore();
+}
+
 export function drawScene(ctx, state, game){
   const W=state.w, H=state.h;
   
@@ -338,8 +508,14 @@ export function drawScene(ctx, state, game){
     ctx.restore();
   }
   for(const p of projectiles){ 
-    ctx.fillStyle="#ffd166"; 
-    ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill(); 
+    // Custom missile rendering for missile launcher projectiles
+    if(p.isMissile && p.arcingFire) {
+      drawMissile(ctx, p);
+    } else {
+      // Default projectile rendering for other towers
+      ctx.fillStyle="#ffd166"; 
+      ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2); ctx.fill(); 
+    }
   }
   
   // Draw heat zones
@@ -522,6 +698,15 @@ export function drawScene(ctx, state, game){
       ctx.arc(pr.x, pr.y, pr.size, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    } else if (pr.type === 'smoke') {
+      const alpha = (pr.life / 2.0) * 0.7; // Fade over time, max 70% opacity
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = pr.color;
+      const size = 4 + (2.0 - pr.life) * 3; // Grow as it dissipates
+      ctx.beginPath();
+      ctx.arc(pr.x, pr.y, size, 0, Math.PI * 2);
+      ctx.fill();
       ctx.globalAlpha = 1;
     } else {
       ctx.fillStyle = "#e7c08a88"; 

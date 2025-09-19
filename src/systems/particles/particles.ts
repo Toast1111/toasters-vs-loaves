@@ -29,6 +29,56 @@ export function spawnExplosion(x, y, intensity = 10) {
   }
 }
 
+export function spawnSplashExplosion(x, y, radius = 60, intensity = 15) {
+  // Main explosion blast at center
+  for(let i = 0; i < intensity; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 180 + 80;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      g: 250,
+      life: Math.random() * 0.8 + 0.5,
+      type: 'explosion',
+      color: `hsl(${Math.random() * 30 + 15}, 90%, ${Math.random() * 20 + 70}%)` // Orange/red flames
+    });
+  }
+  
+  // Ring of particles to show splash area boundary
+  const ringParticles = Math.floor(radius / 8);
+  for(let i = 0; i < ringParticles; i++) {
+    const angle = (i / ringParticles) * Math.PI * 2;
+    const ringX = x + Math.cos(angle) * radius;
+    const ringY = y + Math.sin(angle) * radius;
+    
+    particles.push({
+      x: ringX, y: ringY,
+      vx: Math.cos(angle) * 40,
+      vy: Math.sin(angle) * 40,
+      g: 150,
+      life: 0.6,
+      type: 'explosion',
+      color: `hsl(30, 70%, 60%)` // Consistent orange for ring
+    });
+  }
+  
+  // Smoke/debris particles that linger longer
+  for(let i = 0; i < intensity / 2; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 60 + 30;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      g: 100, // Less gravity for smoke
+      life: Math.random() * 1.2 + 0.8, // Longer lasting
+      type: 'smoke',
+      color: `rgba(80, 60, 40, 0.7)` // Dark smoke
+    });
+  }
+}
+
 export function spawnPoisonCloud(x, y, radius = 40, duration = 3000) {
   // Create poison cloud particles
   const particleCount = Math.floor(radius / 5);

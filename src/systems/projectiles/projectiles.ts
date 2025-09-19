@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { breads, damageBread } from "../../content/entities/breads";
+import { spawnSplashExplosion } from "../particles";
 export const projectiles=[];
 
 // Object pool for performance optimization
@@ -22,7 +23,21 @@ export function fireFrom(t, target, customDamage = null){
   // Safety check - if tower data is invalid, just return
   if (!t || !target) return;
   
-  const angle=Math.atan2(target.y-t.y, target.x-t.x);
+  // Calculate launch position offset for missile launchers
+  let launchX = t.x;
+  let launchY = t.y;
+  
+  if(t.missileSlots && t.slotIndex !== undefined) {
+    // Position missile launch based on slot index
+    const slots = t.missileSlots;
+    const slotIndex = t.slotIndex;
+    const angle = (slotIndex * Math.PI * 2 / Math.max(slots, 4)) - Math.PI/2;
+    const radius = slots > 4 ? 8 : 6;
+    launchX += Math.cos(angle) * radius;
+    launchY += Math.sin(angle) * radius;
+  }
+  
+  const angle=Math.atan2(target.y-launchY, target.x-launchX);
   const speed=t.projectileSpeed || 300; // Add fallback
   const damage = customDamage || t.damage || 1; // Add fallback
   
@@ -31,16 +46,68 @@ export function fireFrom(t, target, customDamage = null){
   // Get projectile from pool and initialize all properties
   const p = getPooledProjectile();
   p.id = ++_id;
-  p.x = t.x;
-  p.y = t.y;
-  p.vx = Math.cos(angle)*speed;
-  p.vy = Math.sin(angle)*speed;
+  p.x = launchX;
+  p.y = launchY;
+  
+  // Handle arcing fire for missile launchers
+  if(t.arcingFire && t.missileSlots) {
+    // Calculate proper ballistic trajectory for missiles
+    const distance = Math.hypot(target.x - launchX, target.y - launchY);
+    const deltaX = target.x - launchX;
+    const deltaY = target.y - launchY;
+    
+    // Enhanced ballistic trajectory calculation for dramatic arc
+    const launchAngle = Math.PI / 4; // 45 degrees for maximum range/dramatic arc
+    const gravity = 200; // Adjusted gravity for visible but realistic arc
+    
+    // Calculate time to target and initial velocity
+    const horizontalDistance = Math.abs(deltaX);
+    const verticalDistance = deltaY;
+    
+    // Calculate required initial velocity for ballistic trajectory
+    const denominator = Math.sin(2 * launchAngle);
+    const initialSpeed = Math.sqrt((gravity * horizontalDistance * horizontalDistance) / 
+                                  (horizontalDistance * Math.tan(launchAngle) - verticalDistance) / Math.cos(launchAngle) / Math.cos(launchAngle));
+    
+    // Set initial velocity components for dramatic high arc
+    const launchDirection = deltaX >= 0 ? 1 : -1;
+    p.vx = launchDirection * initialSpeed * Math.cos(launchAngle);
+    p.vy = -initialSpeed * Math.sin(launchAngle); // Negative for upward launch
+    
+    // Missile-specific properties
+    p.gravity = gravity;
+    p.arcTarget = {x: target.x, y: target.y};
+    p.startX = launchX;
+    p.startY = launchY;
+    p.isArcing = true;
+    p.isMissile = true;
+    p.arcingFire = true;
+    p.flightTime = 0;
+    p.maxFlightTime = 8; // Maximum flight time before forced ground impact
+    
+    // Enhanced projectile lifetime for arcing missiles
+    p.life = 10; // Longer life for arcing projectiles
+    
+    // Copy ammo type information from tower
+    p.ammoType = t.currentAmmoType || 'standard';
+    
+    // Initialize exhaust trail for missiles
+    p.exhaustTrail = [];
+  } else {
+    // Normal straight-line trajectory
+    p.vx = Math.cos(angle)*speed;
+    p.vy = Math.sin(angle)*speed;
+  }
+  
   p.dmg = damage;
   console.log(`DEBUG: Projectile created with dmg=${p.dmg}`);
   p.pierce = t.pierce || 0;
   p.splash = t.splash || 0;
   p.splashDmg = t.splashDmg || 0;
-  p.life = t.unlimitedRange ? 10 : (t._projectileLifetime || (t.range / speed));
+  // Don't override life for missiles - they need longer life for ballistic trajectories
+  if(!p.isMissile) {
+    p.life = t.unlimitedRange ? 10 : (t._projectileLifetime || (t.range / speed));
+  }
   p.damageType = t.damageType || 'physical';
   p.splashType = t.splashType || 'explosion';
   // Special upgrade effects
@@ -155,8 +222,88 @@ export function stepProjectiles(dt, state){
         }
       }
       
-      p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt; 
+      // Handle arcing missiles with proper ballistic physics
+      if(p.isArcing && p.isMissile) {
+        p.flightTime += dt;
+        
+        // Apply gravity to create realistic ballistic arc
+        p.vy += p.gravity * dt;
+        
+        // Check for ground impact or target area reached
+        const groundLevel = 400; // Lower ground level for smaller screens
+        const reachedTargetArea = p.flightTime > p.maxFlightTime * 0.7; // Impact at 70% of max flight time
+        const hitGround = p.y > groundLevel;
+        
+        if(hitGround || reachedTargetArea || p.flightTime > p.maxFlightTime) {
+          // Missile impacts - create explosion
+          p.groundImpact = true;
+          p.impactX = p.x;
+          p.impactY = hitGround ? Math.min(p.y, groundLevel) : p.y;
+          // Don't mark as dead here - let the ground impact handler do it
+        }
+      }
+      
+      p.x+=p.vx*dt; p.y+=p.vy*dt; p.life-=dt;
+      
+      // Update exhaust trail for missiles
+      if(p.isMissile && p.exhaustTrail) {
+        // Add current position to trail
+        p.exhaustTrail.push({
+          x: p.x,
+          y: p.y,
+          life: 0.5, // Trail segment life
+          maxLife: 0.5
+        });
+        
+        // Update and remove old trail segments
+        for(let i = p.exhaustTrail.length - 1; i >= 0; i--) {
+          const segment = p.exhaustTrail[i];
+          segment.life -= dt;
+          if(segment.life <= 0) {
+            p.exhaustTrail.splice(i, 1);
+          }
+        }
+        
+        // Limit trail length for performance
+        if(p.exhaustTrail.length > 15) {
+          p.exhaustTrail.shift();
+        }
+      } 
+      
+      // Handle ground impact for missiles BEFORE life check
+      if(p.groundImpact && p.isMissile) {
+        // Create splash explosion effect at impact point
+        console.log('Missile impact at:', p.impactX, p.impactY, 'splash radius:', p.splash || 40);
+        const splashRadius = p.splash || 40;
+        spawnSplashExplosion(p.impactX, p.impactY, splashRadius, Math.floor(splashRadius / 3));
+        
+        // Apply splash damage to nearby enemies
+        if(p.splash > 0) {
+          for(const e of breads) {
+            if(!e.alive) continue;
+            const dist = Math.hypot(p.impactX - e.x, p.impactY - e.y);
+            if(dist <= p.splash) {
+              const splashDamage = p.splashDmg || (p.dmg * 0.5);
+              const falloff = 1 - (dist / p.splash);
+              const finalDamage = Math.floor(splashDamage * falloff);
+              if(finalDamage > 0) {
+                damageBread(e, finalDamage, state, 'explosion');
+              }
+            }
+          }
+        }
+        
+        // Remove the projectile after ground impact
+        p.dead = true;
+        continue; // Skip normal collision detection
+      }
+      
       if(p.life<=0) p.dead=true;
+      
+      // Skip direct enemy collision for missiles - they only explode on ground impact
+      if(p.isMissile) {
+        continue; // Missiles don't do direct hits, only ground explosions
+      }
       
       for(const e of breads){ 
         if(!e.alive) continue; 
