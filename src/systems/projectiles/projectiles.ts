@@ -23,6 +23,13 @@ export function fireFrom(t, target, customDamage = null){
   // Safety check - if tower data is invalid, just return
   if (!t || !target) return;
   
+  // Range validation for missile launchers to prevent overshooting
+  const distanceToTarget = Math.hypot(target.x - t.x, target.y - t.y);
+  if (t.missileSlots && distanceToTarget > t.range) {
+    console.warn(`Missile target at distance ${distanceToTarget} exceeds range ${t.range}`);
+    return; // Don't fire if target is out of range
+  }
+  
   // Calculate launch position offset for missile launchers
   let launchX = t.x;
   let launchY = t.y;
@@ -52,27 +59,38 @@ export function fireFrom(t, target, customDamage = null){
   // Handle arcing fire for missile launchers
   if(t.arcingFire && t.missileSlots) {
     // Calculate proper ballistic trajectory for missiles
-    const distance = Math.hypot(target.x - launchX, target.y - launchY);
     const deltaX = target.x - launchX;
     const deltaY = target.y - launchY;
+    const distance = Math.hypot(deltaX, deltaY);
     
-    // Enhanced ballistic trajectory calculation for dramatic arc
-    const launchAngle = Math.PI / 4; // 45 degrees for maximum range/dramatic arc
-    const gravity = 200; // Adjusted gravity for visible but realistic arc
+    // Use a simpler, more accurate ballistic calculation
+    const gravity = 400; // Gravity acceleration (pixels/s²)
     
-    // Calculate time to target and initial velocity
-    const horizontalDistance = Math.abs(deltaX);
-    const verticalDistance = deltaY;
+    // For missile launchers, use a time-based approach for consistent accuracy
+    const timeToTarget = Math.max(1.0, distance / 150); // Minimum 1s flight time, scales with distance
     
-    // Calculate required initial velocity for ballistic trajectory
-    const denominator = Math.sin(2 * launchAngle);
-    const initialSpeed = Math.sqrt((gravity * horizontalDistance * horizontalDistance) / 
-                                  (horizontalDistance * Math.tan(launchAngle) - verticalDistance) / Math.cos(launchAngle) / Math.cos(launchAngle));
+    // Calculate velocity needed to reach target in the given time
+    // Horizontal velocity is simple: distance / time
+    p.vx = deltaX / timeToTarget;
     
-    // Set initial velocity components for dramatic high arc
-    const launchDirection = deltaX >= 0 ? 1 : -1;
-    p.vx = launchDirection * initialSpeed * Math.cos(launchAngle);
-    p.vy = -initialSpeed * Math.sin(launchAngle); // Negative for upward launch
+    // Vertical velocity must account for gravity: 
+    // finalY = initialY + vy*t + 0.5*g*t²
+    // Solving for vy: vy = (finalY - initialY - 0.5*g*t²) / t
+    p.vy = (deltaY - 0.5 * gravity * timeToTarget * timeToTarget) / timeToTarget;
+    
+    // Add a slight upward bias for a more dramatic arc
+    p.vy -= 50;
+    
+    console.log(`Missile trajectory: target=(${target.x}, ${target.y}), distance=${distance.toFixed(1)}, time=${timeToTarget.toFixed(2)}s, vel=(${p.vx.toFixed(1)}, ${p.vy.toFixed(1)})`);
+    
+    // Safety check for extreme velocities
+    if(!isFinite(p.vx) || !isFinite(p.vy) || Math.abs(p.vx) > 800 || Math.abs(p.vy) > 800) {
+      console.warn('Missile velocity out of bounds, using fallback');
+      // Fallback: direct trajectory with slight arc
+      const directTime = distance / 250;
+      p.vx = deltaX / directTime;
+      p.vy = (deltaY / directTime) - 30; // Small upward bias
+    }
     
     // Missile-specific properties
     p.gravity = gravity;
@@ -83,10 +101,10 @@ export function fireFrom(t, target, customDamage = null){
     p.isMissile = true;
     p.arcingFire = true;
     p.flightTime = 0;
-    p.maxFlightTime = 8; // Maximum flight time before forced ground impact
+    p.maxFlightTime = Math.max(2, distance / 100); // Scale max flight time with distance
     
     // Enhanced projectile lifetime for arcing missiles
-    p.life = 10; // Longer life for arcing projectiles
+    p.life = p.maxFlightTime + 1; // Set life based on expected flight time
     
     // Copy ammo type information from tower
     p.ammoType = t.currentAmmoType || 'standard';
@@ -229,16 +247,30 @@ export function stepProjectiles(dt, state){
         // Apply gravity to create realistic ballistic arc
         p.vy += p.gravity * dt;
         
-        // Check for ground impact or target area reached
-        const groundLevel = 400; // Lower ground level for smaller screens
-        const reachedTargetArea = p.flightTime > p.maxFlightTime * 0.7; // Impact at 70% of max flight time
-        const hitGround = p.y > groundLevel;
+        // Check for target proximity or ground impact
+        const distanceToTarget = Math.hypot(p.x - p.arcTarget.x, p.y - p.arcTarget.y);
+        const proximityThreshold = 25; // Impact when within 25 pixels of target
+        const groundLevel = 500; // Adjust based on your game's ground level
+        const hitGround = p.y >= groundLevel;
+        const nearTarget = distanceToTarget <= proximityThreshold;
+        const timeExpired = p.flightTime >= p.maxFlightTime;
         
-        if(hitGround || reachedTargetArea || p.flightTime > p.maxFlightTime) {
+        // Check if missile should impact
+        if(hitGround || nearTarget || timeExpired) {
           // Missile impacts - create explosion
           p.groundImpact = true;
-          p.impactX = p.x;
-          p.impactY = hitGround ? Math.min(p.y, groundLevel) : p.y;
+          
+          // Impact location priority: near target > current position > ground level
+          if(nearTarget) {
+            p.impactX = p.arcTarget.x;
+            p.impactY = p.arcTarget.y;
+          } else if(hitGround) {
+            p.impactX = p.x;
+            p.impactY = groundLevel;
+          } else {
+            p.impactX = p.x;
+            p.impactY = p.y;
+          }
           // Don't mark as dead here - let the ground impact handler do it
         }
       }
