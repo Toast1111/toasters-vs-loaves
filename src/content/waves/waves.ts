@@ -177,6 +177,20 @@ export function buildWave(n, level){
       }
     }
     
+    // Add butter - leaves slippery trails that speed up other enemies
+    if (n >= 3 && n % 4 === 0) { // Made it appear earlier and more frequently for testing
+      const butterCount = 1 + Math.floor(n/12);
+      for(let i=0; i<butterCount; i++) {
+        wave.push({
+          type:'butter', 
+          hp:60+8*n, 
+          speed:45+0.8*n, 
+          bounty:18,
+          special: 'trail'
+        });
+      }
+    }
+
     // Add charred bread - fire resistant but vulnerable to frost
     if (n >= 4 && n % 6 === 0) {
       const charredCount = 2 + Math.floor(n/5);

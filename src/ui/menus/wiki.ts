@@ -177,6 +177,21 @@ export const BREAD_ENCYCLOPEDIA: BreadType[] = [
     healthFormula: '1200 + 300×boss_level',
     speedFormula: '25 + 1×boss_level',
     resistances: { physical: 0.5 }
+  },
+  {
+    key: 'butter',
+    name: 'Butter',
+    baseHealth: 60,
+    baseSpeed: 45,
+    baseBounty: 18,
+    description: 'A slippery stick of butter that leaves a greasy trail behind it, speeding up all other enemies that walk through it.',
+    weaknesses: ['Heat damage', 'Fire towers'],
+    abilities: ['Leaves butter trail that boosts enemy speed by 40%', 'Trail lasts 8 seconds'],
+    rarity: 'Uncommon',
+    special: 'trail',
+    firstAppears: 3,
+    healthFormula: '60 + 8×wave',
+    speedFormula: '45 + 0.8×wave'
   }
 ];
 
@@ -338,6 +353,30 @@ export function drawBreadArt(ctx: CanvasRenderingContext2D, breadType: string, s
       ctx.arc(x, y, 0.8, 0, Math.PI*2); 
       ctx.fill();
     }
+  } else if (breadType === 'butter') {
+    // Butter stick - golden yellow rectangular shape
+    ctx.fillStyle="#ffef94"; // Light butter yellow
+    roundedRect(ctx, -r*0.8, -r*0.4, r*1.6, r*0.8, r*0.15);
+    
+    // Darker butter color for shading
+    ctx.fillStyle="#ffd966"; 
+    roundedRect(ctx, -r*0.75, -r*0.35, r*1.5, r*0.3, r*0.1);
+    
+    // Wrapper paper ends (white)
+    ctx.fillStyle="#f8f8ff";
+    roundedRect(ctx, -r*0.85, -r*0.45, r*0.2, r*0.9, r*0.05);
+    roundedRect(ctx, r*0.65, -r*0.45, r*0.2, r*0.9, r*0.05);
+    
+    // Brand text on wrapper
+    ctx.fillStyle="#666";
+    ctx.font = `${r*0.15}px ui-monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('BUTTER', -r*0.75, -r*0.1);
+    ctx.fillText('BUTTER', r*0.75, -r*0.1);
+    
+    // Shiny highlight
+    ctx.fillStyle="#ffffa0";
+    roundedRect(ctx, -r*0.6, -r*0.25, r*1.2, r*0.15, r*0.05);
   } else if (breadType.includes('boss')) {
     // Boss breads - larger and more imposing
     const baseColor = breadType.includes('sourdough') ? "#d4b887" : 

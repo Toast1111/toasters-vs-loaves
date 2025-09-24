@@ -101,6 +101,17 @@ export const BreadTypes = {
     }),
 
   // Special enemies
+  butter: (count: number | ((n: number) => number) = (n) => 1 + Math.floor(n/8)) => 
+    createBreadConfig('butter', {
+      count,
+      baseHp: 60,
+      hpPerWave: 8,
+      baseSpeed: 45,
+      speedPerWave: 0.8,
+      bounty: 18,
+      special: 'trail'
+    }),
+
   charredBread: (count: number | ((n: number) => number) = (n) => 2 + Math.floor(n/5)) => 
     createBreadConfig('charred_bread', {
       count,

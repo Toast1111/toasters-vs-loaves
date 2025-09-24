@@ -361,110 +361,123 @@ export class Game{
         
         // Handle missile launcher firing (independent slot system)
         if(t.missileSlots && t.slotCooldowns) {
-          // Collect all ready slots and available targets first
+          // Collect all ready slots first
           const readySlots = [];
           for(let slotIndex = 0; slotIndex < t.slotCooldowns.length; slotIndex++) {
             if(t.slotCooldowns[slotIndex] === 0) {
               readySlots.push(slotIndex);
             }
           }
-          
           if(readySlots.length === 0) continue; // No slots ready to fire
-          
-          // Find all valid targets in range
-          const availableTargets = [];
-          for(const e of breads) {
-            if(!e.alive) continue;
-            const dist = Math.hypot(e.x - t.x, e.y - t.y);
-            if(dist > t.range) continue;
-            
-            // Calculate priority score for this target
-            let priority = 1000 - dist; // Closer is better
-            if(e.hp > 100) priority += 200; // Prioritize high HP targets
-            if(e.type.includes('boss')) priority += 500; // Bosses get priority
-            
-            availableTargets.push({
+
+          // Build list of enemies in range, prioritized closest-to-exit then proximity
+          const enemiesInRange = breads
+            .filter(e => e.alive && Math.hypot(e.x - t.x, e.y - t.y) <= t.range)
+            .map(e => ({
               enemy: e,
-              distance: dist,
-              priority: priority
-            });
-          }
-          
-          if(availableTargets.length === 0) continue; // No valid targets
-          
-          // Sort targets by priority (highest first)
-          availableTargets.sort((a, b) => b.priority - a.priority);
-          
-          // Distribute targets among ready slots to avoid overlap
-          const assignedTargets = [];
-          for(let i = 0; i < readySlots.length && i < availableTargets.length; i++) {
-            const slotIndex = readySlots[i];
-            let selectedTarget = null;
-            
-            // Try to find a unique target for this slot
-            for(const targetInfo of availableTargets) {
-              const isAlreadyTargeted = assignedTargets.some(assigned => assigned.target === targetInfo.enemy);
-              if(!isAlreadyTargeted) {
-                selectedTarget = targetInfo.enemy;
-                break;
+              score: (1000 - e.wpt * 50) + Math.hypot(e.x - t.x, e.y - t.y) * 0.1
+            }))
+            .sort((a,b)=>a.score-b.score)
+            .map(x=>x.enemy);
+          if(enemiesInRange.length === 0) continue;
+
+          // Helper: predict enemy position along its path after timeAhead seconds
+          const predictOnPath = (enemy, timeAhead) => {
+            // Determine path waypoints
+            let wpArray = waypoints; // legacy fallback
+            if (this.state.currentLevel) {
+              const p = this.state.currentLevel.paths.find(p=>p.id===enemy.pathId) || this.state.currentLevel.paths[0];
+              wpArray = p.waypoints;
+            }
+            // Remaining distance the enemy will travel
+            let remaining = Math.max(0, (enemy.speed || 0) * timeAhead);
+            // Start from current position toward next waypoint
+            let cx = enemy.x, cy = enemy.y;
+            let idx = enemy.wpt + 1;
+            while(remaining > 0 && idx < wpArray.length) {
+              const tx = wpArray[idx].x, ty = wpArray[idx].y;
+              const dx = tx - cx, dy = ty - cy; const seg = Math.hypot(dx,dy);
+              if(seg <= 0.0001) { idx++; continue; }
+              if(remaining >= seg) { // move to waypoint and continue
+                cx = tx; cy = ty; idx++; remaining -= seg;
+              } else {
+                const f = remaining / seg; cx += dx * f; cy += dy * f; remaining = 0;
               }
             }
-            
-            // If all high-priority targets are taken, allow targeting the same enemy
-            // (better than not firing at all)
-            if(!selectedTarget && availableTargets.length > 0) {
-              selectedTarget = availableTargets[0].enemy; // Highest priority target
+            return { x: cx, y: cy };
+          };
+
+          // Helper: project any point to the closest point on the enemy's path polyline
+          const projectToPath = (enemy, pt) => {
+            // Determine path waypoints
+            let wpArray = waypoints; // legacy fallback
+            if (this.state.currentLevel) {
+              const p = this.state.currentLevel.paths.find(p=>p.id===enemy.pathId) || this.state.currentLevel.paths[0];
+              wpArray = p.waypoints;
             }
-            
-            if(selectedTarget) {
-              assignedTargets.push({
-                slotIndex: slotIndex,
-                target: selectedTarget
-              });
+            let bestX = pt.x, bestY = pt.y, bestD2 = Infinity;
+            // Search from current segment onwards to save work
+            const startIdx = Math.max(0, (enemy.wpt || 0));
+            for(let i = startIdx; i < wpArray.length - 1; i++) {
+              const ax = wpArray[i].x, ay = wpArray[i].y;
+              const bx = wpArray[i+1].x, by = wpArray[i+1].y;
+              const abx = bx - ax, aby = by - ay;
+              const apx = pt.x - ax, apy = pt.y - ay;
+              const ab2 = abx*abx + aby*aby;
+              if(ab2 <= 1e-6) continue;
+              let tproj = (apx*abx + apy*aby) / ab2;
+              tproj = Math.max(0, Math.min(1, tproj));
+              const px = ax + abx * tproj;
+              const py = ay + aby * tproj;
+              const dx = px - pt.x, dy = py - pt.y;
+              const d2 = dx*dx + dy*dy;
+              if(d2 < bestD2) { bestD2 = d2; bestX = px; bestY = py; }
             }
-          }
-          
-          // Fire missiles from assigned slots
-          for(const assignment of assignedTargets) {
-            const slotIndex = assignment.slotIndex;
-            const slotTarget = assignment.target;
-            
+            return { x: bestX, y: bestY };
+          };
+
+          // Fire missiles from ready slots with path-constrained predicted targeting
+          let missilesFired = 0;
+          for (let i = 0; i < readySlots.length; i++) {
+            const slotIndex = readySlots[i];
+            // Choose target enemy (rotate through list)
+            const enemy = enemiesInRange[i % enemiesInRange.length];
+            if(!enemy) continue;
+
+            // Estimate flight time based on distance and missile speed
+            const baseSpeed = t.projectileSpeed || 180;
+            const distNow = Math.hypot(enemy.x - t.x, enemy.y - t.y);
+            // Slightly longer than straight-line to account for arc
+            const timeAhead = Math.min(3, Math.max(0.5, (distNow / baseSpeed) * 1.2));
+            // Predict position along path
+            let aim = predictOnPath(enemy, t.leadTargeting ? timeAhead : 0.2);
+            // Project aim onto the enemy path to ensure on-path impacts
+            aim = projectToPath(enemy, aim);
+            // Clamp aim to tower range (stay within circle)
+            const aimDist = Math.hypot(aim.x - t.x, aim.y - t.y);
+            if(aimDist > t.range) {
+              const ang = Math.atan2(aim.y - t.y, aim.x - t.x);
+              aim = { x: t.x + Math.cos(ang) * (t.range - 5), y: t.y + Math.sin(ang) * (t.range - 5) };
+            }
+
+            // Prepare projectile configuration and damage based on ammo type
             const slotFireRate = t.fireRate;
-            
-            // Determine ammo type for this slot
             let actualDamage = t.damage;
             let ammoType = 'standard';
-            
             if(t.multiWarhead && t.customAmmoPerSlot && t.slotAmmoTypes) {
               ammoType = t.slotAmmoTypes[slotIndex] || 'standard';
             }
-            
-            // Apply ammo type effects
             switch(ammoType) {
-              case 'high_explosive':
-                actualDamage *= 1.3;
-                break;
-              case 'armor_piercing':
-                actualDamage *= 1.1;
-                break;
-              case 'cluster':
-                actualDamage *= 0.8; // Main warhead does less damage
-                break;
-              case 'thermobaric':
-                actualDamage *= 1.5;
-                break;
-              case 'nuclear':
-                actualDamage *= 2.5;
-                break;
-              default: // 'standard'
-                break;
+              case 'high_explosive': actualDamage *= 1.3; break;
+              case 'armor_piercing': actualDamage *= 1.1; break;
+              case 'cluster': actualDamage *= 0.8; break; // Main warhead less dmg
+              case 'thermobaric': actualDamage *= 1.5; break;
+              case 'nuclear': actualDamage *= 2.5; break;
             }
-            
-            // Create a temporary projectile config based on ammo type
-            const tempTower = {...t};
-            tempTower.currentAmmoType = ammoType; // Pass ammo type to projectile
-            tempTower.slotIndex = slotIndex; // Pass slot index for visual positioning
-            
+
+            const tempTower = { ...t };
+            tempTower.currentAmmoType = ammoType;
+            tempTower.slotIndex = slotIndex;
             if(t.multiWarhead && ammoType !== 'standard') {
               switch(ammoType) {
                 case 'high_explosive':
@@ -490,31 +503,26 @@ export class Game{
                   tempTower.splash = (t.splash || 40) * 3;
                   tempTower.splashDmg = (t.splashDmg || 25) * 2.5;
                   tempTower.radiationDamage = actualDamage * 0.5;
-                  tempTower.radiationRadius = tempTower.splash * 1.5;
+                  tempTower.radiationRadius = (tempTower.splash || 60) * 1.5;
                   break;
               }
             }
-            
-            // Fire missile from this slot with appropriate ammo type
-            fireFrom(tempTower, slotTarget, actualDamage);
-            
-            // Set this slot's cooldown
+
+            // Fire missile with path-based predicted impact point; include timeToTarget hint
+            fireFrom(
+              tempTower,
+              { x: aim.x, y: aim.y, alive: true, timeToTarget: timeAhead },
+              actualDamage
+            );
             t.slotCooldowns[slotIndex] = 1 / slotFireRate;
-            
-            // Visual feedback for missile launch with ammo type
+
             const ammoIcon = {
-              'standard': '🚀',
-              'high_explosive': '💥',
-              'armor_piercing': '🔹',
-              'cluster': '🎆',
-              'thermobaric': '🔥',
-              'nuclear': '☢️'
+              'standard': '🚀', 'high_explosive': '💥', 'armor_piercing': '🔹',
+              'cluster': '🎆', 'thermobaric': '🔥', 'nuclear': '☢️'
             }[ammoType] || '🚀';
-            
-            UI.float(this, t.x, t.y, `${ammoIcon} Slot ${slotIndex + 1}`, false);
-            
-            // Fire only one missile per frame from this launcher
-            break;
+            UI.float(this, t.x, t.y, `${ammoIcon} Slot ${slotIndex + 1} → Path`, false);
+
+            missilesFired++;
           }
         }
         

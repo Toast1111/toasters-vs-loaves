@@ -20,9 +20,16 @@ export function spawnBread(spec, state){
     alive:true, special:spec.special||null, armor:spec.armor||0,
     lastSpeedBurst: 0, regenerateTimer: 0,
     resistances: spec.resistances || {},
-    // Initialize heat zone effect variables
+    // Initialize heat zone and butter trail effect variables
     _heatZoneSlow: false,
-    _slowMultiplier: 1.0
+    _slowMultiplier: 1.0,
+    _butterTrailBoost: false,
+    _butterSpeedMultiplier: 1.0,
+    
+    // Butter trail tracking
+    lastTrailX: startWp.x,
+    lastTrailY: startWp.y,
+    trailDistance: 0
   }; 
   breads.push(e); 
 }
@@ -82,6 +89,11 @@ export function stepBreads(dt, state){
       speedMultiplier *= (e.speedBoostMultiplier || 1);
     }
     
+    // Speed boost from butter trails
+    if(e._butterTrailBoost && e._butterSpeedMultiplier) {
+      speedMultiplier *= e._butterSpeedMultiplier;
+    }
+    
     // Explosion armor buff (stacks with regular armor)
     if(e.explosionArmorTimer > 0) {
       e.explosionArmorTimer -= dt;
@@ -135,6 +147,23 @@ export function stepBreads(dt, state){
     const dx=target.x-e.x, dy=target.y-e.y; const d=Math.hypot(dx,dy);
     if(d<2){ e.wpt++; continue; }
     const vx=dx/d*currentSpeed, vy=dy/d*currentSpeed; e.x+=vx*effectiveDt; e.y+=vy*effectiveDt;
+    
+    // Create butter trail for butter enemies
+    if(e.type === 'butter') {
+      const distFromLastTrail = Math.hypot(e.x - e.lastTrailX, e.y - e.lastTrailY);
+      e.trailDistance += distFromLastTrail;
+      
+      // Create a new trail segment every 15 pixels of movement
+      if(e.trailDistance >= 15) {
+        import('../../../systems/effects').then(({ createButterTrail }) => {
+          createButterTrail(e.x, e.y, 25, 0.4, 8); // 25px radius, 40% speed boost, 8 second duration
+        }).catch(err => console.warn('Failed to create butter trail:', err));
+        
+        e.lastTrailX = e.x;
+        e.lastTrailY = e.y;
+        e.trailDistance = 0;
+      }
+    }
   }
 }
 // Define splitting patterns for different bread types

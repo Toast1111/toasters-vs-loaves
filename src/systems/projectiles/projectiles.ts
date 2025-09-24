@@ -48,7 +48,7 @@ export function fireFrom(t, target, customDamage = null){
   const speed=t.projectileSpeed || 300; // Add fallback
   const damage = customDamage || t.damage || 1; // Add fallback
   
-  console.log(`DEBUG: fireFrom - tower damage=${t.damage}, customDamage=${customDamage}, final damage=${damage}`);
+  // Debug noise reduction: avoid excessive logs in production
   
   // Get projectile from pool and initialize all properties
   const p = getPooledProjectile();
@@ -64,10 +64,10 @@ export function fireFrom(t, target, customDamage = null){
     const distance = Math.hypot(deltaX, deltaY);
     
     // Use a simpler, more accurate ballistic calculation
-    const gravity = 400; // Gravity acceleration (pixels/s²)
+  const gravity = 400; // Gravity acceleration (pixels/s²)
     
     // For missile launchers, use a time-based approach for consistent accuracy
-    const timeToTarget = Math.max(1.0, distance / 150); // Minimum 1s flight time, scales with distance
+  const timeToTarget = Math.max(0.8, Math.min(3.0, distance / 160)); // Reasonable bounds
     
     // Calculate velocity needed to reach target in the given time
     // Horizontal velocity is simple: distance / time
@@ -76,20 +76,21 @@ export function fireFrom(t, target, customDamage = null){
     // Vertical velocity must account for gravity: 
     // finalY = initialY + vy*t + 0.5*g*t²
     // Solving for vy: vy = (finalY - initialY - 0.5*g*t²) / t
-    p.vy = (deltaY - 0.5 * gravity * timeToTarget * timeToTarget) / timeToTarget;
+  p.vy = (deltaY - 0.5 * gravity * timeToTarget * timeToTarget) / timeToTarget;
     
     // Add a slight upward bias for a more dramatic arc
-    p.vy -= 50;
+  p.vy -= 40;
     
-    console.log(`Missile trajectory: target=(${target.x}, ${target.y}), distance=${distance.toFixed(1)}, time=${timeToTarget.toFixed(2)}s, vel=(${p.vx.toFixed(1)}, ${p.vy.toFixed(1)})`);
+  // Optional trajectory debug: uncomment if needed
+  // console.log(`Missile trajectory: target=(${target.x}, ${target.y}), distance=${distance.toFixed(1)}, time=${timeToTarget.toFixed(2)}s, vel=(${p.vx.toFixed(1)}, ${p.vy.toFixed(1)})`);
     
     // Safety check for extreme velocities
-    if(!isFinite(p.vx) || !isFinite(p.vy) || Math.abs(p.vx) > 800 || Math.abs(p.vy) > 800) {
+  if(!isFinite(p.vx) || !isFinite(p.vy) || Math.abs(p.vx) > 800 || Math.abs(p.vy) > 800) {
       console.warn('Missile velocity out of bounds, using fallback');
       // Fallback: direct trajectory with slight arc
-      const directTime = distance / 250;
+  const directTime = Math.max(0.6, Math.min(2.0, distance / 240));
       p.vx = deltaX / directTime;
-      p.vy = (deltaY / directTime) - 30; // Small upward bias
+  p.vy = (deltaY / directTime) - 30; // Small upward bias
     }
     
     // Missile-specific properties
@@ -101,7 +102,11 @@ export function fireFrom(t, target, customDamage = null){
     p.isMissile = true;
     p.arcingFire = true;
     p.flightTime = 0;
-    p.maxFlightTime = Math.max(2, distance / 100); // Scale max flight time with distance
+    p.maxFlightTime = Math.max(1.2, Math.min(4, distance / 120)); // Scale within sensible bounds
+    // If caller provided an estimated time (via target.timeToTarget), use that to avoid mid-air expiry
+    if(typeof target.timeToTarget === 'number' && isFinite(target.timeToTarget)) {
+      p.maxFlightTime = Math.max(0.8, Math.min(4.5, target.timeToTarget * 1.15));
+    }
     
     // Enhanced projectile lifetime for arcing missiles
     p.life = p.maxFlightTime + 1; // Set life based on expected flight time
@@ -118,7 +123,7 @@ export function fireFrom(t, target, customDamage = null){
   }
   
   p.dmg = damage;
-  console.log(`DEBUG: Projectile created with dmg=${p.dmg}`);
+  // console.log(`DEBUG: Projectile created with dmg=${p.dmg}`);
   p.pierce = t.pierce || 0;
   p.splash = t.splash || 0;
   p.splashDmg = t.splashDmg || 0;
@@ -247,31 +252,29 @@ export function stepProjectiles(dt, state){
         // Apply gravity to create realistic ballistic arc
         p.vy += p.gravity * dt;
         
-        // Check for target proximity or ground impact
+        // Check for detonation near target or when flight time expires
         const distanceToTarget = Math.hypot(p.x - p.arcTarget.x, p.y - p.arcTarget.y);
-        const proximityThreshold = 25; // Impact when within 25 pixels of target
-        const groundLevel = 500; // Adjust based on your game's ground level
-        const hitGround = p.y >= groundLevel;
+        const proximityThreshold = 24; // Impact when within ~tile size
         const nearTarget = distanceToTarget <= proximityThreshold;
         const timeExpired = p.flightTime >= p.maxFlightTime;
-        
-        // Check if missile should impact
-        if(hitGround || nearTarget || timeExpired) {
-          // Missile impacts - create explosion
+        // Proximity fuse to any enemy (prevents threading through or off-path finishes)
+        let nearAnyEnemy = false;
+        if(!nearTarget) {
+          for(const e of breads) {
+            if(!e.alive) continue;
+            const de = Math.hypot(p.x - e.x, p.y - e.y);
+            if(de <= proximityThreshold) { nearAnyEnemy = true; break; }
+          }
+        }
+        if(nearTarget || nearAnyEnemy || timeExpired) {
           p.groundImpact = true;
-          
-          // Impact location priority: near target > current position > ground level
           if(nearTarget) {
             p.impactX = p.arcTarget.x;
             p.impactY = p.arcTarget.y;
-          } else if(hitGround) {
-            p.impactX = p.x;
-            p.impactY = groundLevel;
           } else {
             p.impactX = p.x;
             p.impactY = p.y;
           }
-          // Don't mark as dead here - let the ground impact handler do it
         }
       }
       
@@ -305,7 +308,7 @@ export function stepProjectiles(dt, state){
       // Handle ground impact for missiles BEFORE life check
       if(p.groundImpact && p.isMissile) {
         // Create splash explosion effect at impact point
-        console.log('Missile impact at:', p.impactX, p.impactY, 'splash radius:', p.splash || 40);
+        // console.log('Missile impact at:', p.impactX, p.impactY, 'splash radius:', p.splash || 40);
         const splashRadius = p.splash || 40;
         spawnSplashExplosion(p.impactX, p.impactY, splashRadius, Math.floor(splashRadius / 3));
         

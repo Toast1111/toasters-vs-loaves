@@ -3,7 +3,7 @@ import { isPath, waypoints, grid, isBuildable, isPathOnLevel } from "../content/
 import { breads } from "../content/entities/breads";
 import { projectiles } from "../systems/projectiles";
 import { particles, damageNumbers } from "../systems/particles";
-import { heatZones, screenShake } from "../systems/effects";
+import { heatZones, butterTrails, screenShake } from "../systems/effects";
 import { powerups, activePowerups, POWERUP_TYPES } from "../systems/powerups";
 import { getTowerBase } from "../content/entities/towers";
 import { roundedRect } from "./drawUtils";
@@ -217,6 +217,24 @@ export function drawScene(ctx, state, game){
     // fallback legacy
     ctx.strokeStyle="#2a3246"; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(waypoints[0].x,waypoints[0].y); for(let i=1;i<waypoints.length;i++){ const p=waypoints[i]; ctx.lineTo(p.x,p.y); } ctx.stroke();
   }
+
+  // Draw butter trails UNDER breads (funny yellow splats)
+  // These are rendered before breads so enemies appear to walk on top of the butter.
+  for(const trail of butterTrails) {
+    const alpha = Math.max(0, Math.min(1, trail.duration / (trail.maxDuration || 1)));
+    if (trail.img) {
+      ctx.globalAlpha = alpha * 0.9; // fade cached image
+      // Draw image centered at trail.x, trail.y using stored offsets
+      ctx.drawImage(trail.img, Math.round(trail.x - trail.ox), Math.round(trail.y - trail.oy));
+      ctx.globalAlpha = 1;
+    } else {
+      // Fallback: simple filled ellipse
+      ctx.fillStyle = `rgba(255, 224, 96, ${alpha * 0.6})`;
+      ctx.beginPath();
+      ctx.ellipse(trail.x, trail.y, trail.radius*0.6, trail.radius*0.4, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
   for(const e of breads){ 
     if(!e.alive) continue; 
     const hp=e.hp/e.maxHp; 
@@ -379,6 +397,23 @@ export function drawScene(ctx, state, game){
       for(let i = 0; i < 3; i++) {
         ctx.beginPath(); ctx.arc(0, 0, e.r*0.3 + i*3, 0, Math.PI*2); ctx.stroke();
       }
+    } else if (e.type === 'butter') {
+      // Butter stick - golden yellow rectangular shape
+      ctx.fillStyle="#ffef94"; // Light butter yellow
+      roundedRect(ctx, -e.r*0.8, -e.r*0.4, e.r*1.6, e.r*0.8, e.r*0.15);
+      
+      // Darker butter color for shading
+      ctx.fillStyle="#ffd966"; 
+      roundedRect(ctx, -e.r*0.75, -e.r*0.35, e.r*1.5, e.r*0.3, e.r*0.1);
+      
+      // Wrapper paper ends (white)
+      ctx.fillStyle="#f8f8ff";
+      roundedRect(ctx, -e.r*0.85, -e.r*0.45, e.r*0.2, e.r*0.9, e.r*0.05);
+      roundedRect(ctx, e.r*0.65, -e.r*0.45, e.r*0.2, e.r*0.9, e.r*0.05);
+      
+      // Shiny highlight
+      ctx.fillStyle="#ffffa0";
+      roundedRect(ctx, -e.r*0.6, -e.r*0.25, e.r*1.2, e.r*0.15, e.r*0.05);
     } else if (e.type === 'charred_bread') {
       // Charred bread - dark and burnt
       ctx.fillStyle="#2c1810"; roundedRect(ctx,-e.r*0.875,-e.r*0.625,e.r*1.75,e.r*1.25,e.r*0.5);
@@ -526,6 +561,8 @@ export function drawScene(ctx, state, game){
     ctx.strokeStyle = `rgba(255, 150, 100, ${alpha * 0.6})`;
     ctx.lineWidth = 2; ctx.stroke();
   }
+  
+  // (Butter trails are drawn earlier under breads)
   
   for(const pr of particles){ 
     if (pr.type === 'explosion') {
