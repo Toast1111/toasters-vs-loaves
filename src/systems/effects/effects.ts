@@ -13,71 +13,8 @@ export function createHeatZone(x, y, radius = 50, damage = 5, duration = 3) {
 }
 
 export function createButterTrail(x, y, radius = 25, speedBoost = 0.5, duration = 8) {
-  // Pre-generate a set of splats so visuals are stable over lifetime
-  const splatCount = 4 + Math.floor(Math.random() * 4); // 4-7 splats
-  const splats = [];
-  for(let i = 0; i < splatCount; i++) {
-    const ang = Math.random() * Math.PI * 2;
-    const r = Math.random() * (radius * 0.6);
-    const sx = x + Math.cos(ang) * r * (0.6 + Math.random()*0.6);
-    const sy = y + Math.sin(ang) * r * (0.6 + Math.random()*0.6);
-    const rx = 4 + Math.random() * 10; // ellipse radius x
-    const ry = 3 + Math.random() * 8;  // ellipse radius y
-    const rot = Math.random() * Math.PI * 2;
-    // Occasional big central blob
-    if (i === 0 && Math.random() < 0.6) {
-      splats.push({ x, y, rx: radius * (0.35 + Math.random()*0.2), ry: radius * (0.25 + Math.random()*0.2), rot: Math.random()*Math.PI });
-    }
-    splats.push({ x: sx, y: sy, rx, ry, rot });
-  }
-  // Compute bounding box for splats
-  let minX = x - radius, minY = y - radius, maxX = x + radius, maxY = y + radius;
-  for(const s of splats) {
-    minX = Math.min(minX, s.x - s.rx);
-    minY = Math.min(minY, s.y - s.ry);
-    maxX = Math.max(maxX, s.x + s.rx);
-    maxY = Math.max(maxY, s.y + s.ry);
-  }
-  const width = Math.ceil(maxX - minX + 4);
-  const height = Math.ceil(maxY - minY + 4);
-  const ox = Math.round(x - minX + 2);
-  const oy = Math.round(y - minY + 2);
-
-  // Pre-render to an offscreen canvas for performance
-  let imgCanvas = null;
-  try {
-    imgCanvas = document.createElement('canvas');
-    imgCanvas.width = Math.max(2, width);
-    imgCanvas.height = Math.max(2, height);
-    const ictx = imgCanvas.getContext('2d');
-    if (ictx) {
-      ictx.imageSmoothingEnabled = true;
-      // Render splats at full opacity; we'll fade with globalAlpha on draw
-      for(const s of splats) {
-        ictx.save();
-        ictx.translate(s.x - (minX - 2), s.y - (minY - 2));
-        ictx.rotate(s.rot || 0);
-        // Base body
-        ictx.fillStyle = 'rgba(255, 224, 96, 1)';
-        ictx.beginPath();
-        ictx.ellipse(0, 0, s.rx, s.ry, 0, 0, Math.PI*2);
-        ictx.fill();
-        // Highlight
-        ictx.fillStyle = 'rgba(255, 245, 160, 0.6)';
-        ictx.beginPath();
-        ictx.ellipse(-s.rx*0.25, -s.ry*0.25, s.rx*0.45, s.ry*0.35, 0, 0, Math.PI*2);
-        ictx.fill();
-        ictx.restore();
-      }
-    }
-  } catch {}
-
   butterTrails.push({
     x, y, radius, speedBoost, duration, maxDuration: duration,
-    splats,
-    // Cached image and offsets for fast rendering
-    img: imgCanvas,
-    ox, oy,
     id: ++_butterTrailId
   });
 }

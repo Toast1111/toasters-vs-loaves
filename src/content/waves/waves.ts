@@ -178,7 +178,7 @@ export function buildWave(n, level){
     }
     
     // Add butter - leaves slippery trails that speed up other enemies
-    if (n >= 3 && n % 4 === 0) { // Made it appear earlier and more frequently for testing
+    if (n >= 6 && n % 9 === 0) {
       const butterCount = 1 + Math.floor(n/12);
       for(let i=0; i<butterCount; i++) {
         wave.push({

@@ -217,24 +217,6 @@ export function drawScene(ctx, state, game){
     // fallback legacy
     ctx.strokeStyle="#2a3246"; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(waypoints[0].x,waypoints[0].y); for(let i=1;i<waypoints.length;i++){ const p=waypoints[i]; ctx.lineTo(p.x,p.y); } ctx.stroke();
   }
-
-  // Draw butter trails UNDER breads (funny yellow splats)
-  // These are rendered before breads so enemies appear to walk on top of the butter.
-  for(const trail of butterTrails) {
-    const alpha = Math.max(0, Math.min(1, trail.duration / (trail.maxDuration || 1)));
-    if (trail.img) {
-      ctx.globalAlpha = alpha * 0.9; // fade cached image
-      // Draw image centered at trail.x, trail.y using stored offsets
-      ctx.drawImage(trail.img, Math.round(trail.x - trail.ox), Math.round(trail.y - trail.oy));
-      ctx.globalAlpha = 1;
-    } else {
-      // Fallback: simple filled ellipse
-      ctx.fillStyle = `rgba(255, 224, 96, ${alpha * 0.6})`;
-      ctx.beginPath();
-      ctx.ellipse(trail.x, trail.y, trail.radius*0.6, trail.radius*0.4, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
   for(const e of breads){ 
     if(!e.alive) continue; 
     const hp=e.hp/e.maxHp; 
@@ -562,7 +544,19 @@ export function drawScene(ctx, state, game){
     ctx.lineWidth = 2; ctx.stroke();
   }
   
-  // (Butter trails are drawn earlier under breads)
+  // Draw butter trails
+  for(const trail of butterTrails) {
+    const alpha = trail.duration / trail.maxDuration;
+    ctx.fillStyle = `rgba(255, 239, 148, ${alpha * 0.4})`; // Golden butter color with transparency
+    ctx.beginPath(); ctx.arc(trail.x, trail.y, trail.radius, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = `rgba(255, 217, 102, ${alpha * 0.7})`;
+    ctx.lineWidth = 2; ctx.stroke();
+    
+    // Add some shimmer effect
+    const shimmer = Math.sin(Date.now() * 0.005 + trail.x * 0.01) * 0.2 + 0.8;
+    ctx.fillStyle = `rgba(255, 255, 160, ${alpha * shimmer * 0.2})`;
+    ctx.beginPath(); ctx.arc(trail.x, trail.y, trail.radius * 0.7, 0, Math.PI*2); ctx.fill();
+  }
   
   for(const pr of particles){ 
     if (pr.type === 'explosion') {

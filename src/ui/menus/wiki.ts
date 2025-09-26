@@ -189,7 +189,7 @@ export const BREAD_ENCYCLOPEDIA: BreadType[] = [
     abilities: ['Leaves butter trail that boosts enemy speed by 40%', 'Trail lasts 8 seconds'],
     rarity: 'Uncommon',
     special: 'trail',
-    firstAppears: 3,
+    firstAppears: 6,
     healthFormula: '60 + 8×wave',
     speedFormula: '45 + 0.8×wave'
   }
