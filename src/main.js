@@ -1,3 +1,4 @@
+//ahahaha
 // @ts-nocheck
 import { Game } from "./game/Game";
 const canvas = document.getElementById("game");
